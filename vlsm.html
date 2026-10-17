@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VLSM | Hop</title>
+<meta name="theme-color" content="#FBFBFA">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/core.css">
+<link rel="stylesheet" href="assets/ip.css">
+</head>
+<body>
+<main>
+  <div class="col head">
+    <h1>VLSM</h1>
+    <p class="lede">โจทย์จะให้ IP มาหนึ่งก้อน พร้อมรายชื่อแผนกที่ต้องใช้เครื่องคนละจำนวน งานของเราคือแบ่งก้อนนั้นให้ทุกแผนกได้วงของตัวเองแบบพอดีขนาดและไม่ทับกัน แล้วตอบ [[netaddr]], [[prefix]], [[range]] และ [[bcast]] ของแต่ละวง</p>
+  </div>
+
+  <div class="fig map" id="map"></div>
+
+  <section class="idea col" id="s-bits">
+    <h2>IP คือเลขฐานสอง 32 หลัก<span class="en">IPv4 = 32 bits = 4 octets</span></h2>
+    <p class="key">เลขอย่าง 192.168.1.10 ที่เราเห็น จริงๆ คือ [[bit|บิต]] 32 ตัวที่ถูกตัดเป็น 4 ชุด ชุดละ 8 บิต เรียกว่า [[octet]] แล้วแปลงแต่ละชุดเป็นเลขฐานสิบให้คนอ่านง่าย</p>
+    <p>ใน octet หนึ่ง บิตแต่ละตำแหน่งมีค่าประจำตัว จากซ้ายไปขวาคือ 128, 64, 32, 16, 8, 4, 2, 1 บิตไหนเป็น 1 ก็เอาค่าของตำแหน่งนั้นมาบวกกัน ผลรวมคือเลขฐานสิบของ octet นั้น เพราะฉะนั้น octet หนึ่งมีค่าได้ตั้งแต่ 0 (ปิดหมด) ถึง 255 (เปิดหมด)</p>
+    <div class="fig in-col" id="fig-octet"></div>
+    <p>ข้อสอบ VLSM ของวิชานี้ให้คิดด้วยเลขฐานสอง เพราะการแบ่งวงคือการขีดเส้นแบ่งระหว่างบิต ถ้ามองเป็นบิตได้ ทุกขั้นที่เหลือจะเป็นแค่การนับบิต</p>
+  </section>
+
+  <section class="idea col" id="s-split">
+    <h2>บิตซ้ายบอกวง บิตขวาบอกเครื่อง<span class="en">Network part / Host part</span></h2>
+    <p class="key">IP หนึ่งตัวแบ่งเป็นสองส่วน: [[netpart]] ทางซ้ายบอกว่าเครื่องอยู่วงไหน และ [[hostpart]] ทางขวาบอกว่าเป็นเครื่องไหนในวงนั้น ตัวเลข [[prefix]] หลังเครื่องหมาย / คือจุดที่ขีดเส้นแบ่ง</p>
+    <p>เช่น 192.168.1.37/26 แปลว่า 26 บิตแรกเป็นส่วน network เหลือ 32 − 26 = 6 บิตเป็นส่วน host ลองเลื่อน prefix ดูว่าเส้นแบ่งขยับแล้วอะไรเปลี่ยนบ้าง</p>
+    <div class="fig" id="fig-prefix"></div>
+    <p>บิตฝั่ง host มี h ตัว แต่ละตัวเป็น 0 หรือ 1 ได้ จึงมีรูปแบบทั้งหมด 2<sup>h</sup> แบบ นั่นคือจำนวน IP ในวง ([[block]]) แต่มีสองตัวที่แจกให้เครื่องไม่ได้ คือตัวที่บิต host เป็น 0 หมด ([[netaddr]]) กับตัวที่เป็น 1 หมด ([[bcast]])</p>
+    <div id="eq-usable"></div>
+    <div id="q-usable"></div>
+  </section>
+
+  <section class="idea col" id="s-class">
+    <h2>ดู class ก่อน แล้วหาว่าต้องเริ่มที่บิตไหน<span class="en">Class + given prefix = where you start</span></h2>
+    <p class="key">[[cls|Class]] ของ IP ดูจากเลข octet แรก และแต่ละ class มี [[defprefix]] ติดตัวมา ส่วนนั้นเราห้ามแตะ ถ้าโจทย์ให้ prefix ยาวกว่าค่าเริ่มต้น แปลว่าก้อนนี้ถูกแบ่งมาแล้วรอบหนึ่ง บิตที่เกินมาก็ห้ามแตะเหมือนกัน</p>
+    <p>บิตที่เราใช้แบ่งได้จริงคือบิตที่อยู่ <b>หลัง prefix ที่โจทย์ให้</b> เท่านั้น จุดนี้คือที่ที่หลายคนพลาด ถ้าก้อนเป็น class B อย่าง 172.16.0.0/20 บิตว่างเริ่มตั้งแต่ octet ที่ 3 ไม่ใช่ octet ที่ 4 ถ้าไปคิดแค่ octet สุดท้ายจะได้วงผิดทั้งหมด</p>
+    <div class="fig" id="fig-class"></div>
+    <div id="q-class"></div>
+  </section>
+
+  <section class="idea col" id="s-borrow">
+    <h2>ยืมบิต 1 ตัว วงแตกเป็น 2<span class="en">Borrowing bits = subnetting (FLSM)</span></h2>
+    <p class="key">การแบ่งวงคือการ [[borrow]] จากฝั่ง host มาต่อท้ายฝั่ง network ยืม s บิตจะได้ 2<sup>s</sup> วงย่อย และแต่ละวงเล็กลงครึ่งหนึ่งทุกครั้งที่ยืมเพิ่ม</p>
+    <p>ถ้าทุกวงยืมบิตเท่ากัน ทุกวงก็ขนาดเท่ากัน แบบนี้เรียกว่า [[flsm]] ลองเลื่อนจำนวนบิตที่ยืมดู บิตที่ยืมจะไล่เป็นเลขฐานสอง 000, 001, 010, ... ไปเรื่อยๆ แต่ละเลขคือชื่อวงหนึ่งวง</p>
+    <div class="fig" id="fig-borrow"></div>
+  </section>
+
+  <section class="idea col" id="s-block">
+    <h2>หาต้นวง ท้ายวง และช่วงที่แจกได้<span class="en">Network, broadcast, usable range</span></h2>
+    <p class="key">วงทุกวงเริ่มที่ผลคูณของ [[block]] ตัวแรกของวงคือ [[netaddr]] (บิต host เป็น 0 หมด) ตัวสุดท้ายคือ [[bcast]] (บิต host เป็น 1 หมด) ที่อยู่ระหว่างกลางคือ [[range]]</p>
+    <p>ลองลาก IP ไปตามแถบ แล้วดูว่ามันตกอยู่ในวงไหน ถ้าเปลี่ยน prefix ขนาดวงจะเปลี่ยน แต่วิธีคิดเหมือนเดิมทุกครั้ง</p>
+    <div class="fig" id="fig-block"></div>
+    <div id="q-block"></div>
+  </section>
+
+  <section class="idea col" id="s-vlsm">
+    <h2>VLSM: แผนกใหญ่ก่อน แล้วแบ่งที่เหลือต่อ<span class="en">Variable Length Subnet Mask</span></h2>
+    <p class="key">[[vlsm]] คือการให้แต่ละแผนกได้วงขนาดไม่เท่ากัน โดยใช้วิธีเดิมทั้งหมด แค่ทำทีละแผนก เริ่มจากแผนกที่ต้องการเครื่องมากที่สุด แล้วเอาวงที่ยังว่างมาแบ่งต่อให้แผนกถัดไป</p>
+    <p>ขั้นตอนต่อแผนกมีแค่นี้:</p>
+    <ol>
+      <li>หา n ที่น้อยที่สุดที่ 2<sup>n</sup> − 2 ≥ [[need|จำนวนเครื่อง]] (n คือจำนวน host bit)</li>
+      <li>prefix ใหม่ = 32 − n</li>
+      <li>วางวงนั้นที่ IP ว่างตัวแรก แล้วหา network, ช่วงที่ใช้ได้ และ broadcast</li>
+      <li>วงถัดไปเริ่มที่ broadcast + 1</li>
+    </ol>
+    <div id="eq-n"></div>
+    <p>ด้านล่างคือตัวอย่างในชีท 3.2 ทั้งข้อ ก้อน 172.16.0.0/20 ต้องแบ่งให้ 500 hosts 2 วง, 200 hosts 3 วง, 100 hosts 2 วง, 50 hosts 4 วง และ 2 hosts 4 วง ลากแถบด้านล่างเพื่อดูทีละแผนก แถบที่อยู่จะซูมเข้าไปหาวงที่กำลังแบ่ง</p>
+    <div class="fig" id="fig-vlsm"></div>
+    <div id="q-vlsm"></div>
+  </section>
+
+  <section class="idea col" id="s-drill">
+    <h2>ลองทำเองแบบข้อสอบ<span class="en">Exam drill</span></h2>
+    <p>โจทย์สุ่มใหม่ทุกครั้ง ทำในกระดาษหรือกรอกในช่องก็ได้ กรอกเสร็จกดตรวจ ช่องไหนผิดจะเป็นสีแดง ถ้าติดตรงไหนกดดูวิธีทำ จะเห็นทุกบรรทัดที่ควรเขียนในกระดาษคำตอบ</p>
+  </section>
+  <div class="drill" id="drill"></div>
+
+  <a class="next" href="routing.html"><div class="s">บทถัดไป</div><div class="t">Router เลือกทางยังไง <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div></a>
+</main>
+<script src="assets/core.js"></script>
+<script src="assets/ipcalc.js"></script>
+<script src="assets/ip-concepts.js"></script>
+<script src="vlsm.js"></script>
+</body>
+</html>
