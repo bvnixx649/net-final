@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Security protocols &amp; NAT | Hop</title>
+<meta name="theme-color" content="#0F0F12">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/core.css">
+<link rel="stylesheet" href="assets/threats.css">
+<link rel="stylesheet" href="assets/protocols.css">
+</head>
+<body>
+<main>
+  <div class="col head">
+    <h1>Security protocols &amp; NAT</h1>
+    <p class="lede">ข้อสอบจะเอาตาราง [[osi|OSI]] กับ security protocol จากสไลด์มาถามว่า protocol แต่ละตัวอยู่ชั้นไหน ป้องกันอะไร และ<b>ข้อดีข้อเสีย</b>ของแต่ละตัวคืออะไร อีกเรื่องคือ [[nat|NAT]] ทั้งสามแบบแปลงที่อยู่ยังไง บทนี้ไล่จากชั้นบนลงชั้นล่าง แล้วจบด้วยตารางเทียบข้อดีข้อเสีย</p>
+  </div>
+
+  <div class="fig map" id="map"></div>
+
+  <section class="idea col" id="s-https">
+    <h2>HTTPS คือ HTTP ที่ห่อด้วย SSL/TLS<span class="en">Application layer: HTTPS, SSH, PGP, S/MIME</span></h2>
+    <p class="key">[[http|HTTP]] ส่งทุกอย่างเป็นข้อความธรรมดาผ่าน port 80 ใครดักได้ก็อ่านได้ [[https|HTTPS]] คือ HTTP ที่วิ่งผ่าน [[ssl|SSL]] / [[tls|TLS]] ข้อมูลระหว่าง browser กับ web server จึงถูกเข้ารหัส และใช้ port 443</p>
+    <div id="eq-https"></div>
+    <p>ลองสลับดูว่าคนที่ดักอยู่กลางทาง (การโจมตีแบบ Sniffing จาก <a href="threats.html">บทที่ 6</a>) เห็นอะไรในแต่ละแบบ</p>
+    <div class="fig" id="fig-https"></div>
+    <p>web server ต้องติดตั้ง [[cert]] ที่ [[ca|CA]] ซึ่ง browser เชื่อถือเป็นผู้รับรอง (มีทั้งแบบฟรีและเสียเงิน) certificate นี้คือสิ่งที่ทำให้ HTTPS กัน Spoofing ได้ด้วย เพราะเว็บปลอมไม่มี certificate ที่ CA รับรองชื่อโดเมนจริง</p>
+    <p>ชั้นเดียวกันในตารางยังมี [[ssh|SSH]] (remote login แบบเข้ารหัส ใช้แทน Telnet), [[pgp|PGP]] และ [[smime|S/MIME]] (เข้ารหัสอีเมล) ทุกตัวในชั้นนี้ปกป้องแค่ application ของตัวเอง</p>
+    <div id="q-https"></div>
+  </section>
+
+  <section class="idea col" id="s-tls">
+    <h2>SSL/TLS ตกลงกุญแจก่อนส่งข้อมูล<span class="en">Session/Transport layer: SSL handshake</span></h2>
+    <p class="key">application ที่ใช้ TCP เรียกใช้ SSL/TLS ได้ เพื่อให้ client กับ server ได้ [[authn]], [[conf]] และ [[integ]] ก่อนส่งข้อมูลจริง ทั้งสองฝั่งทำ [[handshake]] กันก่อน</p>
+    <p>ลากแถบเวลาดูทีละขั้นตามรูปในสไลด์ ขั้น 1 ถึง 2 คือการพิสูจน์ตัวตนของ server ขั้น 3 ถึง 4 คือการตกลงกุญแจ หลังจากนั้นข้อมูลทั้งหมดถูกเข้ารหัสด้วย [[sesskey]]</p>
+    <div class="fig" id="fig-tls"></div>
+    <p>ทำไมต้องใช้สองแบบ: [[pubkey]] ปลอดภัยพอที่จะส่งผ่านเครือข่ายได้แต่ช้า จึงใช้แค่ตอนส่ง session key ส่วน session key เป็น symmetric key (key เดียวทั้งเข้าและถอด) ทำงานเร็ว จึงใช้กับข้อมูลทั้งหมด</p>
+    <p>สไลด์บอกว่า SSL/TLS ทำงานระหว่างชั้น Transport กับ Application และใช้กับ application protocol อื่นได้ด้วย เช่น IMAP, POP3, FTP ในตาราง p.20 จึงวาง SSL | TLS ไว้ที่ชั้น 5 ถึง 4</p>
+    <div id="q-tls"></div>
+  </section>
+
+  <section class="idea col" id="s-vpn">
+    <h2>VPN ขุดอุโมงค์เข้ารหัสผ่าน Internet<span class="en">VPN: Remote-Access, Site-to-Site (Intranet, Extranet)</span></h2>
+    <p class="key">[[vpn|VPN]] สร้างเครือข่ายส่วนตัวบนเครือข่ายสาธารณะ ข้อมูลถูกเข้ารหัสแล้วห่อไว้ใน [[tunnel|อุโมงค์]] ฝั่งผู้ใช้เห็นเหมือนต่อสายตรงเข้าเครือข่ายในองค์กร</p>
+    <p>สไลด์แบ่งตามการใช้งานเป็นสองแบบ [[ravpn]] คือพนักงานคนเดียวต่อเข้าบริษัทจากบ้าน ส่วน [[s2svpn]] คือ gateway ของสองเครือข่ายต่อกัน แยกย่อยเป็น Intranet VPN (สำนักงานใหญ่กับสาขาขององค์กรเดียวกัน) และ Extranet VPN (ระหว่างองค์กรกับคู่ค้า)</p>
+    <div class="fig" id="fig-vpn"></div>
+    <p>โปรโตคอลที่ใช้ทำ VPN ตามสไลด์: [[pptp|PPTP]], [[l2f|L2F]], [[l2tp|L2TP]] ซึ่งอยู่ชั้น Data Link และ [[ipsec|IPSec]] ซึ่งอยู่ชั้น Network สไลด์หน้า VPN ตั้งชื่อว่า Network Layer เพราะ VPN สมัยนี้ส่วนใหญ่ใช้ IPSec</p>
+    <div id="q-vpn"></div>
+  </section>
+
+  <section class="idea col" id="s-ipsec">
+    <h2>IPSec: เข้ารหัสแค่ข้อมูล หรือทั้ง packet<span class="en">Network layer: IPSec transport mode vs tunneling mode</span></h2>
+    <p class="key">[[ipsec|IPSec]] ปกป้องที่ชั้น Network ให้ทั้ง Confidentiality, Integrity และ Authentication มีสองโหมด ต่างกันที่ว่า <b>IP header เดิมถูกเข้ารหัสด้วยหรือไม่</b></p>
+    <p>เลือกโหมดแล้วลากแถบเวลา จะเห็น packet ถูกสร้างทีละชั้นแบบเดียวกับรูปในสไลด์ แถวสุดท้ายคือสิ่งที่วิ่งอยู่บนสาย</p>
+    <div class="fig" id="fig-ipsec"></div>
+    <p>[[transport]] ใช้แบบ host-to-host ทั้งสองเครื่องต้องรัน IPSec เอง IP header เดิมอยู่ข้างนอกไม่ถูกเข้ารหัส จึงเกิด [[traffic]] ได้ [[tunnelmode]] ให้ gateway เข้ารหัสแทน host ทั้ง packet ถูกซ่อนแล้วใส่ header ใหม่ของ gateway คนกลางรู้แค่ว่า gateway สองตัวคุยกัน</p>
+    <div class="tw2" id="tbl-ipsec"></div>
+    <div id="q-ipsec"></div>
+  </section>
+
+  <section class="idea col" id="s-pros">
+    <h2>ข้อดีข้อเสียของแต่ละตัว<span class="en">Advantages and disadvantages, side by side</span></h2>
+    <p class="key">หลักใหญ่ข้อเดียว: protocol ยิ่งอยู่ชั้นสูง ยิ่งป้องกันเฉพาะ application นั้นและต้องตั้งค่าที่แต่ละ app ยิ่งอยู่ชั้นต่ำ ยิ่งป้องกันทุก traffic ที่ผ่าน โดย app ไม่ต้องรู้ตัว แต่ต้องตั้งค่าที่เครื่องหรือ gateway และมี overhead</p>
+    <p>เลือก protocol สองตัวเพื่อเทียบกัน ข้อที่มาจากสไลด์ตรงๆ ขีดเส้นใต้ไว้ ที่เหลือเป็นเหตุผลที่ตามมาจากการทำงานของมัน</p>
+    <div class="fig" id="fig-pros"></div>
+  </section>
+
+  <section class="idea col" id="s-nat">
+    <h2>NAT แปลง IP ภายในก่อนออก Internet<span class="en">Static NAT, Dynamic NAT, NAPT / PAT</span></h2>
+    <p class="key">เครื่องในองค์กรใช้ [[privip]] ซึ่งออก Internet ตรงๆ ไม่ได้ router ที่ทำ [[nat|NAT]] จึงเปลี่ยน IP ต้นทางเป็น [[pubip]] ก่อนส่งออก แล้วจดคู่ไว้ในตาราง พอคำตอบกลับมาก็แปลงกลับ</p>
+    <p>ช่วง private IP: 10.0.0.0 – 10.255.255.255, 172.16.0.0 – 172.31.255.255, 192.168.0.0 – 192.168.255.255 (สไลด์พิมพ์ช่วงกลางเป็น 172.32.255.255 ซึ่งผิด ที่ถูกคือ 172.31.255.255)</p>
+    <p>แตะส่งจากแต่ละเครื่องแล้วดูตารางแปลงที่อยู่ใน router ค่อยๆ เติม ใช้ตัวเลขเดียวกับสไลด์ ลองเทียบสามแบบ: [[staticnat]] จับคู่ 1 ต่อ 1 ตายตัว, [[dynnat]] สุ่มจาก pool, [[pat]] ใช้ IP เดียวแล้วแยกด้วย [[port]]</p>
+    <div class="fig" id="fig-nat"></div>
+    <div id="q-nat"></div>
+  </section>
+
+  <section class="idea col" id="s-drill">
+    <h2>ลองทำเองแบบข้อสอบ<span class="en">Exam drill</span></h2>
+    <p>สุ่มโจทย์สามแบบ: protocol อยู่ชั้นไหน, ข้อดีข้อเสียของ protocol (เขียนเองก่อนแล้วเทียบคำตอบตัวอย่าง) และเติมตาราง NAT</p>
+  </section>
+  <div class="drill" id="drill"></div>
+
+  <a class="next" href="index.html"><div class="s">จบบทสุดท้าย</div><div class="t">กลับไปหน้าแผนที่ข้อสอบ <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div></a>
+</main>
+<script src="assets/core.js"></script>
+<script src="assets/sec-kit.js"></script>
+<script src="assets/threats-concepts.js"></script>
+<script src="assets/protocols-concepts.js"></script>
+<script src="protocols.js"></script>
+</body>
+</html>

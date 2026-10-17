@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ภัยคุกคามและ CIA | Hop</title>
+<meta name="theme-color" content="#0F0F12">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/core.css">
+<link rel="stylesheet" href="assets/threats.css">
+</head>
+<body>
+<main>
+  <div class="col head">
+    <h1>ภัยคุกคามและ CIA</h1>
+    <p class="lede">ข้อสอบจะให้ชื่อการโจมตี หรือให้รูปการโจมตีมาหนึ่งรูป แล้วถามว่าเป็นการโจมตีแบบไหน เป็น passive หรือ active และทำให้ [[conf]], [[integ]] หรือ [[avail]] ข้อไหนเสีย ต้องอธิบายเป็นคำพูดว่าเสียเพราะอะไร เช่น DoS ทำให้ Availability เสีย เพราะ server ถูกใช้ทรัพยากรจนผู้ใช้ที่มีสิทธิ์เข้าใช้ไม่ได้</p>
+  </div>
+
+  <div class="fig map" id="map"></div>
+
+  <section class="idea col" id="s-cia">
+    <h2>สามสิ่งที่ต้องรักษาไว้<span class="en">CIA: Confidentiality, Integrity, Availability</span></h2>
+    <p class="key">ความปลอดภัยของข้อมูลวัดจากสามข้อ: [[conf]] คนไม่มีสิทธิ์อ่านไม่ได้, [[integ]] คนไม่มีสิทธิ์แก้ไม่ได้, [[avail]] คนมีสิทธิ์ต้องใช้ได้ทุกเมื่อ การโจมตีทุกแบบทำให้อย่างน้อยหนึ่งข้อเสียไป</p>
+    <p>ตัวอย่างด้านล่าง Bob ส่งคำสั่งโอนเงิน 500 บาทผ่านเครือข่ายไปที่ธนาคาร ลองทำให้เสียทีละข้อ แล้วสังเกตว่าแต่ละข้อเสียต่างกันยังไง ประโยคใต้ภาพคือสิ่งที่ควรเขียนในกระดาษคำตอบ</p>
+    <div class="fig" id="fig-cia"></div>
+    <p>สังเกตว่าตอน C เสีย ธนาคารยังได้ข้อมูลครบและถูกต้อง (I กับ A ยังดี) แต่ข้อมูลรั่วไปแล้ว ส่วนตอน A เสีย ไม่มีใครเห็นหรือแก้ข้อมูลเลย แค่ใช้งานไม่ได้ เวลาตอบให้แยกให้ชัดว่าข้อไหนเสียและข้อไหนไม่เสีย</p>
+    <p>สไลด์บอกวิธีรักษาแต่ละข้อไว้ด้วย: C ใช้ [[encrypt]] และ [[authn]] / [[authz]], I ใช้ [[hash]], A ใช้การ update patch, ระบบที่ทำงานได้ 24 ชั่วโมง 7 วัน (Reliability) และออกแบบเครือข่ายให้พอกับจำนวนผู้ใช้</p>
+    <div id="q-cia"></div>
+  </section>
+
+  <section class="idea col" id="s-risk">
+    <h2>ความเสี่ยงเกิดจากสองอย่างมาเจอกัน<span class="en">Risk = Vulnerability + Threat</span></h2>
+    <p class="key">สไลด์นิยาม [[risk]] ว่ามาจาก [[vuln]] (ช่องทางที่เจาะเข้าระบบได้) และ [[threat]] (สิ่งภายนอกที่อาจมาทำความเสียหาย) เมื่อภัยคุกคามใช้ช่องโหว่ได้จริง จึงเกิด [[attack]]</p>
+    <div id="eq-risk"></div>
+    <p>ลองเปิดปิดสองอย่างนี้ดู ช่องโหว่ในตัวอย่างคือ server ที่ยังไม่ update patch ภัยคุกคามคือ cracker ที่กำลังหาช่องทางเข้า</p>
+    <div class="fig" id="fig-risk"></div>
+    <p>ช่องโหว่ที่สไลด์ยกตัวอย่าง: การจัดการบัญชีผู้ใช้ไม่ดี (คนย้ายแผนกหรือลาออกแล้วสิทธิ์ยังเหมือนเดิม), software bugs, ไม่ update patch, ไม่ update anti-virus</p>
+    <h3>ภัยคุกคามมีสามส่วน</h3>
+    <p>สไลด์แยกภัยคุกคามเป็น [[target]] (จะทำลายข้อไหนของ CIA), [[agent]] (ใคร ต้องมี Access, Knowledge, Motivation) และ [[event]] (เกิดอะไรขึ้น) ดูตัวอย่างกับพนักงานที่ลาออกแล้วแต่บัญชียังไม่ถูกปิด</p>
+    <div class="fig in-col" id="fig-parts"></div>
+    <h3>ประเภทของภัยคุกคาม</h3>
+    <p>สไลด์แบ่งภัยคุกคามไว้ 12 ประเภท เลือกตัวอักษรเพื่อดูว่าประเภทไหนมักทำให้ข้อนั้นเสีย (สไลด์ไม่ได้จับคู่กับ CIA ไว้ ตัวอักษรท้ายแถวคือข้อที่โดนกระทบชัดที่สุด ใช้ช่วยคิดเวลาเขียนตอบ)</p>
+    <div class="fig in-col" id="fig-types"></div>
+    <div id="q-risk"></div>
+  </section>
+
+  <section class="idea col" id="s-attack">
+    <h2>อ่านรูปการโจมตีให้ออก<span class="en">Attack approach: Snooping, Modification, Spoofing, DoS</span></h2>
+    <p class="key">รูปในข้อสอบมาจากสไลด์ ตัวละครเดิมทุกรูป: Bob ส่ง Alice รับ Darth คือผู้โจมตี สิ่งที่บอกว่าเป็นการโจมตีแบบไหนคือ <b>หัวลูกศรไปจบที่ใคร</b></p>
+    <p>ก่อนดูรูป แยกการโจมตีเป็นสองแบบ: [[passive]] ผู้โจมตีแค่ดูหรือฟัง ไม่เปลี่ยนข้อมูล กับ [[active]] ผู้โจมตีแก้ ปลอม หรือขัดขวาง แบบ passive ตรวจจับยากเพราะข้อมูลยังถึงปลายทางครบ</p>
+    <p>รูปด้านล่างมี 4 รูปตามสไลด์ เลือกรูป กดเล่นหรือลากแถบเวลา แล้วตอบว่าเป็นการโจมตีอะไรและทำให้ข้อไหนของ CIA เสีย จากนั้นเทียบกับคำตอบตัวอย่าง</p>
+    <div class="fig" id="fig-attack"></div>
+    <p>วิธีจำ: ลูกศรเดิมยังถึง Alice และมีเส้นแยกไป Darth = [[sniff]] (C เสีย) ลูกศรของ Bob ไปจบที่ Darth แล้ว Darth ส่งเส้นใหม่ไป Alice = [[modify]] (I และ C เสีย) มีแต่ลูกศรจาก Darth ไป Alice = [[spoof]] หลายเครื่องรุมยิงไปที่ server เครื่องเดียว = [[dos]] (A เสีย)</p>
+    <div id="q-attack"></div>
+  </section>
+
+  <section class="idea col" id="s-more">
+    <h2>การโจมตีอื่นในรายการ และป้องกันด้วยอะไร<span class="en">Other attacks listed on the slide</span></h2>
+    <p class="key">สไลด์ Attack Approach ให้รายชื่อการโจมตีอีกหลายแบบแต่ไม่มีรูป ข้อสอบถามได้แบบ "การโจมตีนี้กระทบ CIA ข้อไหน" ใช้หลักเดิม: ข้อมูลรั่ว = C, ข้อมูลถูกแก้ = I, ใช้งานไม่ได้ = A</p>
+    <div id="list-more"></div>
+    <p>การป้องกันแบ่งได้สองกลุ่ม การโจมตีที่อ่านหรือแก้ข้อมูลระหว่างทาง (Sniffing, Modification) ต้องแก้ด้วยการเข้ารหัสและ hash ซึ่งเป็นงานของ security protocol ใน <a href="protocols.html">บทที่ 8</a> ส่วนการโจมตีที่ต้องส่ง packet เข้ามาในเครือข่าย (DoS, worm, การลอบเข้า port ที่ไม่ได้ใช้) [[firewall]] ช่วยกรองได้ ประเภทของ firewall และว่าแต่ละแบบกันอะไรได้อยู่ใน <a href="acl.html">บทที่ 7</a></p>
+    <div class="tw2" id="tbl-defend"></div>
+  </section>
+
+  <section class="idea col" id="s-who">
+    <h2>ใครเป็นคนโจมตี<span class="en">Attacker</span></h2>
+    <p class="key">สไลด์แบ่ง [[attacker]] ตามระดับความชำนาญกับแรงจูงใจ คู่ที่ถามบ่อยคือ Hacker กับ Cracker ซึ่งชำนาญสูงเท่ากัน ต่างกันแค่แรงจูงใจ</p>
+    <div class="fig in-col" id="fig-who"></div>
+    <div id="q-who"></div>
+  </section>
+
+  <section class="idea col" id="s-mal">
+    <h2>Malware แพร่และทำลายต่างกัน<span class="en">Virus, Worm, Trojan horse, Backdoor</span></h2>
+    <p class="key">[[malware]] คือโปรแกรมที่มุ่งร้าย สิ่งที่ข้อสอบใช้แยกแต่ละแบบคือ ต้องอาศัยไฟล์อื่นไหม, แพร่ตัวเองได้ไหม และทำให้ CIA ข้อไหนเสีย</p>
+    <p>เลือกชนิด แล้วเล่นดูในเครือข่าย 6 เครื่องเดียวกัน [[virus]] ต้องรอให้คนเปิดไฟล์ [[worm]] แพร่ไปเองผ่านเครือข่าย [[trojan]] ปลอมตัวเป็นโปรแกรมดีแต่ไม่แพร่ [[backdoor]] คือทางลับที่ข้ามการ login</p>
+    <div class="fig" id="fig-mal"></div>
+    <div class="tw2" id="tbl-mal"></div>
+    <p>ในรายการ malware ของสไลด์ยังมี [[logicbomb]] และ [[zombie]] ซึ่งให้แค่ชื่อ zombie คือเครื่องแบบเดียวกับ 5 เครื่องในรูป DDoS</p>
+    <div id="q-mal"></div>
+  </section>
+
+  <section class="idea col" id="s-drill">
+    <h2>ลองทำเองแบบข้อสอบ<span class="en">Exam drill</span></h2>
+    <p>สุ่มรูปหรือสถานการณ์มาหนึ่งข้อ ตอบชื่อการโจมตี, passive หรือ active และ CIA ข้อที่เสีย แล้วลองเขียนคำอธิบายเองก่อนกดดูคำตอบตัวอย่าง คำตอบตัวอย่างคือสิ่งที่ควรเขียนในกระดาษ</p>
+  </section>
+  <div class="drill" id="drill"></div>
+
+  <a class="next" href="acl.html"><div class="s">บทถัดไป</div><div class="t">Firewall &amp; ACL <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div></a>
+</main>
+<script src="assets/core.js"></script>
+<script src="assets/sec-kit.js"></script>
+<script src="assets/threats-concepts.js"></script>
+<script src="threats.js"></script>
+</body>
+</html>
