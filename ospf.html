@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OSPF | Hop</title>
+<meta name="theme-color" content="#0F0F12">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/core.css">
+<link rel="stylesheet" href="assets/eigrp.css">
+<link rel="stylesheet" href="assets/ospf.css">
+</head>
+<body>
+<main>
+  <div class="col head">
+    <h1>OSPF</h1>
+    <p class="lede">OSPF ไม่มีโจทย์คำนวณ ข้อสอบจะให้อธิบายว่า [[ospf]] ทำงานเป็นขั้นตอนอย่างไรตั้งแต่เปิดเครื่องจนได้ routing table, มีข้อดีอะไร และต่างจาก RIP กับ EIGRP ตรงไหน</p>
+  </div>
+
+  <div class="fig map" id="map"></div>
+
+  <section class="idea col" id="s-ls">
+    <h2>ทุกตัวถือแผนที่ฉบับเดียวกัน<span class="en">Link state vs distance vector</span></h2>
+    <p class="key">OSPF เป็น [[ls|link state]]: router ทุกตัวรู้ทุกลิงก์และ cost ของมัน เก็บไว้ใน [[lsdb]] ที่เหมือนกันทุกตัว แล้วแต่ละตัวคำนวณเส้นทางเองด้วย [[spf]] ต่างจาก [[dv|distance vector]] ที่รู้แค่สิ่งที่เพื่อนบ้านบอกต่อมา</p>
+    <p>สลับดูว่า R1 "เห็น" อะไรในสองแบบ แบบ distance vector R1 ได้แต่ตัวเลขที่เพื่อนบ้านบอกมา ไม่รู้ว่าข้างหลังเพื่อนบ้านหน้าตาเป็นอย่างไร</p>
+    <div class="fig" id="fig-view"></div>
+    <div id="q-view"></div>
+  </section>
+
+  <section class="idea col" id="s-ops">
+    <h2>ขั้นตอนการทำงานของ OSPF<span class="en">Link-state operation</span></h2>
+    <p class="key">OSPF ทำงานห้าขั้นตามลำดับ: ส่ง [[hello|Hello]] หาเพื่อนบ้าน, แลก [[lsa|LSA]], สร้าง [[lsdb|LSDB]], รัน [[spf|SPF]] แล้วใส่เส้นทางที่ดีที่สุดลง [[rtbl|routing table]] หลังจากนั้นจะส่งข้อมูลใหม่เฉพาะตอนที่ลิงก์เปลี่ยน</p>
+    <ol class="steps" id="steps">
+      <li><b class="c-teal">Hello</b>: ส่ง Hello แบบ multicast 224.0.0.5 ทุก 10 วินาที (dead interval 40 วินาที) เพื่อหาเพื่อนบ้านและสร้าง [[adj|adjacency]] เก็บใน [[nbrtbl|neighbor table]]</li>
+      <li><b class="c-amber">แลก LSA</b>: router ส่ง [[lsa|LSA]] บอกสถานะและ cost ของลิงก์ที่ต่อกับตัวเอง แล้ว flood ต่อไปทั่วทั้ง area</li>
+      <li><b class="c-blue">สร้าง LSDB</b>: รวม LSA ทั้งหมดเป็น topology table ทุกตัวใน area ได้แผนที่เหมือนกัน</li>
+      <li><b class="c-violet">รัน SPF</b>: แต่ละตัวรัน Dijkstra โดยตั้งตัวเองเป็นราก ได้ SPF tree</li>
+      <li><b class="c-green">Routing table</b>: ใส่เส้นทางที่ cost รวมต่ำที่สุดจาก SPF tree ลง routing table (AD 110)</li>
+    </ol>
+    <p>ลากแถบเพื่อดูแต่ละขั้นบนเครือข่ายจริงจากสไลด์ ขั้นสุดท้ายคือสิ่งที่เกิดหลังจากนั้น เมื่อมีลิงก์ขาด</p>
+    <div class="fig" id="fig-ops"></div>
+    <div id="q-ops"></div>
+  </section>
+
+  <section class="idea col" id="s-states">
+    <h2>เพื่อนบ้านคุยกันจนฐานข้อมูลตรงกัน<span class="en">Operational states: Down → Full</span></h2>
+    <p class="key">ก่อนจะแลกแผนที่กันได้ router สองตัวต้องไล่ผ่าน [[states|7 สถานะ]]: Down, Init, Two-Way เพื่อสร้าง adjacency แล้ว ExStart, Exchange, Loading จนถึง Full ซึ่งแปลว่าฐานข้อมูลของทั้งคู่ตรงกันแล้ว</p>
+    <p>นี่คือตัวอย่างจากสไลด์: R1 (router ID 172.16.5.1) กับ R2 (172.16.5.2) ต่ออยู่บน Ethernet วงเดียวกัน ลากแถบเพื่อดูว่าแต่ละสถานะส่งอะไรหากัน</p>
+    <div class="fig" id="fig-states"></div>
+  </section>
+
+  <section class="idea col" id="s-dr">
+    <h2>DR กับ BDR บนวง Ethernet<span class="en">Designated Router / Backup DR</span></h2>
+    <p class="key">ถ้ามีหลาย router ต่อ switch ตัวเดียวกัน ทุกคู่จะต้องสร้าง adjacency กันเอง จำนวนพุ่งขึ้นเป็น n(n−1)/2 OSPF จึงเลือก [[dr|DR]] เป็นตัวแทน และ [[bdr|BDR]] เป็นตัวสำรอง ให้ DR เป็นตัวเดียวที่ส่ง LSA ของวงนั้น</p>
+    <p>การเลือก: priority สูงสุดชนะ ถ้าเท่ากันดู [[rid|router ID]] สูงสุด ลองเพิ่มจำนวน router แล้วเทียบสองแบบ</p>
+    <div class="fig in-col" id="fig-dr"></div>
+  </section>
+
+  <section class="idea col" id="s-area">
+    <h2>แบ่งเป็น area เพื่อให้ขยายได้<span class="en">Single-area vs multiarea, Area 0</span></h2>
+    <p class="key">เครือข่ายเล็กใช้ [[area]] เดียว เครือข่ายใหญ่แบ่งหลาย area เป็นลำดับชั้น โดยทุก area ต้องต่อกับ [[area0|Area 0]] (backbone) ทำให้ LSDB ของแต่ละ area เล็กลงและคำนวณเร็วขึ้น</p>
+    <p>router ที่อยู่ระหว่าง area เรียกว่า [[abr|ABR]] ส่วน router ที่ต่อออกไปนอกองค์กร (เช่น ISP) เรียกว่า [[asbr|ASBR]] แตะแต่ละตัวในรูป</p>
+    <div class="fig in-col" id="fig-area"></div>
+  </section>
+
+  <section class="idea col" id="s-cost">
+    <h2>Cost คิดจาก bandwidth<span class="en">Cost = reference bandwidth / interface bandwidth</span></h2>
+    <p class="key">[[cost]] ของ interface คือ reference bandwidth หารด้วย bandwidth ของ interface (ปัดเศษทิ้ง ต่ำสุดคือ 1) ลิงก์ยิ่งเร็ว cost ยิ่งต่ำ cost ของเส้นทางคือผลรวม cost ของ interface ขาออกตลอดทาง</p>
+    <div id="eq-cost"></div>
+    <p>ค่าเริ่มต้นของ [[refbw|reference bandwidth]] คือ 100 Mbps ลองเลือก interface กับ reference ดู จะเห็นปัญหาว่าลิงก์ 100 Mbps ขึ้นไปได้ cost 1 เท่ากันหมด</p>
+    <div class="fig in-col" id="fig-cost"></div>
+    <div id="q-cost"></div>
+  </section>
+
+  <section class="idea col" id="s-spf">
+    <h2>SPF ในสไลด์ ทีละขั้น<span class="en">Dijkstra from R1</span></h2>
+    <p class="key">[[spf|SPF]] เริ่มจากตัวเองที่ cost 0 แล้วยืนยัน router ที่ cost รวมต่ำที่สุดทีละตัว พร้อมอัปเดต cost ของเพื่อนบ้านของตัวที่เพิ่งยืนยัน ทำซ้ำจนครบทุกตัว</p>
+    <p>ข้อสอบไม่ได้ให้คำนวณส่วนนี้ แต่ดูไว้จะเข้าใจว่าขั้น "รัน SPF" ทำอะไร ตัวเลขตรงกับตาราง routing ของ R1 ในสไลด์ (LAN ทุกวง cost 2)</p>
+    <div class="fig" id="fig-spf"></div>
+  </section>
+
+  <section class="idea col" id="s-cmp">
+    <h2>OSPF ต่างจาก RIP และ EIGRP อย่างไร<span class="en">Benefits and differences</span></h2>
+    <p class="key">OSPF เด่นที่ classless, converge เร็ว, ขยายได้ด้วย area, ปลอดภัย (มี authentication) และส่ง update เฉพาะตอนเปลี่ยน แลกมาด้วยการใช้ CPU และ memory มากกว่า และตั้งค่าซับซ้อนกว่า</p>
+    <p>เลือกสองโปรโตคอลเพื่อเทียบกันทีละแถว</p>
+    <div class="fig" id="fig-cmp"></div>
+    <div id="q-cmp"></div>
+  </section>
+
+  <section class="idea col" id="s-drill">
+    <h2>ลองทำเองแบบข้อสอบ<span class="en">Exam drill</span></h2>
+    <p>สองแบบ: เรียงขั้นตอนให้ถูก (แตะตามลำดับ) และข้ออธิบายความต่าง ให้ลองเขียนคำตอบเองก่อน แล้วกดดูคำตอบตัวอย่างว่าควรมีประเด็นอะไรบ้าง</p>
+  </section>
+  <div class="drill" id="drill"></div>
+
+  <a class="next" href="threats.html"><div class="s">บทถัดไป</div><div class="t">ภัยคุกคามและ CIA <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div></a>
+</main>
+<script src="assets/core.js"></script>
+<script src="assets/ospf-concepts.js"></script>
+<script src="ospf.js"></script>
+</body>
+</html>

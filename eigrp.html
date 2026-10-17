@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EIGRP | Hop</title>
+<meta name="theme-color" content="#0F0F12">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/core.css">
+<link rel="stylesheet" href="assets/eigrp.css">
+</head>
+<body>
+<main>
+  <div class="col head">
+    <h1>EIGRP</h1>
+    <p class="lede">ข้อสอบจะให้รูป router ตัวหนึ่งที่ไปปลายทางเดียวกันได้หลายทาง (3, 4 ทางหรือมากกว่า) พร้อมตัวเลข แล้วถามว่าทางไหนคือ [[successor]], ทางไหนคือ [[fs|feasible successor]] และ [[fd|feasible distance]] เท่าไร ตอบเป็น IP ของ router ถัดไป, พอร์ตขาออก หรือเขียนเป็นประโยคก็ได้</p>
+  </div>
+
+  <div class="fig map" id="map"></div>
+
+  <section class="idea col" id="s-what">
+    <h2>EIGRP อยู่ตรงไหนในโลก routing<span class="en">Advanced distance vector + DUAL</span></h2>
+    <p class="key">[[eigrp]] เรียนเส้นทางจากเพื่อนบ้านแบบ [[dv|distance vector]] แต่เก็บทุกทางที่เพื่อนบ้านบอกไว้ใน [[topotbl]] ด้วย จึงเป็นลูกผสมที่ค่อนไปทาง distance vector และมีทางสำรองพร้อมใช้ตลอด</p>
+    <p>อาจารย์ให้รู้ว่าแต่ละโปรโตคอลใช้ metric อะไร แตะแต่ละตัวบนเส้นด้านล่างเพื่อเทียบกัน</p>
+    <div class="fig in-col" id="fig-spectrum"></div>
+    <p>EIGRP เก็บข้อมูลไว้สามตาราง [[nbrtbl]] บอกว่าใครเป็นเพื่อนบ้าน [[topotbl]] เก็บทุกทางที่เพื่อนบ้านบอกมา แล้ว [[dual]] เลือกทางที่ดีที่สุดใส่ [[rtbl]] ภาพนี้คือ router R จากรูปด้านบน</p>
+    <div class="fig" id="fig-tables"></div>
+    <h3>ตัวเลข metric มาจากไหน</h3>
+    <p>[[metric]] คือตัวเลขทุกตัวในบทนี้ สูตรเต็มในสไลด์หน้าตาแบบนี้ แตะแต่ละตัวเพื่อดูความหมาย</p>
+    <div id="eq-full"></div>
+    <p>ค่าเริ่มต้นของ [[kval|ค่า K]] ปิด load กับ reliability ไว้ สูตรที่ใช้จริงจึงเหลือแค่ bandwidth กับ delay</p>
+    <div id="eq-short"></div>
+    <p>ข้อสอบจะให้ตัวเลข metric มาเลย ไม่ต้องคิดสูตรนี้เอง แต่ลองกดดูว่าตัวเลขในสไลด์มาจากไหน จะเห็นว่าลิงก์ที่ช้าที่สุดเส้นเดียวทำให้ทั้งเส้นทางแย่</p>
+    <div class="fig in-col" id="fig-metric"></div>
+  </section>
+
+  <section class="idea col" id="s-fdrd">
+    <h2>ระยะสองท่อน: FD กับ RD<span class="en">Feasible Distance = cost + Reported Distance</span></h2>
+    <p class="key">ทุกเส้นทางแบ่งเป็นสองท่อน ท่อนแรกจากเราถึงเพื่อนบ้านคือ [[cost]] ท่อนที่สองจากเพื่อนบ้านถึงปลายทางคือ [[rd]] ซึ่งเพื่อนบ้านบอกเรามา ผลรวมทั้งเส้นคือ [[fd]]</p>
+    <div id="eq-fd"></div>
+    <p>RD เป็นตัวเลขที่เพื่อนบ้านคิดมาให้ เราไม่ต้องคิดเอง ในข้อสอบโจทย์จะให้มาเลย แตะแต่ละทางเพื่อดูว่าสองท่อนรวมกันเป็น FD อย่างไร</p>
+    <div class="fig" id="fig-fd"></div>
+    <div id="q-fd"></div>
+  </section>
+
+  <section class="idea col" id="s-fs">
+    <h2>เลือกทางหลัก แล้วเช็คทางสำรอง<span class="en">Successor, feasibility condition, feasible successor</span></h2>
+    <p class="key">[[successor]] คือทางที่ FD ต่ำที่สุด ส่วนทางอื่นจะเป็น [[fs|feasible successor]] (FS) ได้ก็ต่อเมื่อ RD ของมัน น้อยกว่า FD ของ successor</p>
+    <div id="eq-fc"></div>
+    <p>กฎนี้ชื่อ [[fc]] จุดที่คนพลาดบ่อยคือเอา FD ของทางนั้นมาเทียบ ที่ถูกคือดู <b class="c-amber">RD</b> ของทางนั้น เทียบกับ <b class="c-violet">FD ของ successor</b> ตัวเดียว</p>
+    <p>ทำไมต้องเป็น RD? ถ้าเพื่อนบ้านบอกว่าตัวเองอยู่ห่างปลายทางน้อยกว่าทางที่ดีที่สุดของเรา แปลว่าทางของมันไม่ได้วิ่งผ่านเราแน่นอน (ถ้าผ่านเรา ระยะของมันต้องมากกว่าระยะของเรา) จึงส่งให้มันได้โดยไม่เกิด [[loop]] ลองลากตัวเลขของทาง C ดู แล้วดูว่าสถานะของทุกทางเปลี่ยนอย่างไร</p>
+    <div class="fig" id="fig-fs"></div>
+    <div id="q-fs"></div>
+  </section>
+
+  <section class="idea col" id="s-slide">
+    <h2>ตัวอย่างสามเหลี่ยมในสไลด์<span class="en">R2 → 192.168.1.0/24 (Routing-2, p20–22)</span></h2>
+    <p class="key">R2 ไป 192.168.1.0/24 ได้สองทาง: ผ่าน R3 ตรงๆ หรืออ้อมผ่าน R1 ทางผ่าน R3 มี FD ต่ำกว่าจึงเป็น successor และ R1 เป็น FS เพราะ RD ของ R1 (2,170,112) น้อยกว่า FD ของ successor (3,012,096)</p>
+    <p>ลากแถบด้านล่างทีละขั้น ตัวเลขทุกตัวตรงกับ <code>show ip eigrp topology</code> ในสไลด์</p>
+    <div class="fig" id="fig-tri"></div>
+    <div id="q-tri"></div>
+  </section>
+
+  <section class="idea col" id="s-fail">
+    <h2>ถ้า successor ล่ม<span class="en">DUAL: promote the FS, or go active and query</span></h2>
+    <p class="key">ถ้ามี FS อยู่แล้ว [[dual]] ยก FS ขึ้นเป็น successor ใหม่ทันทีโดยไม่ต้องคำนวณหรือถามใคร ถ้าไม่มี FS router ต้องเข้า [[active]] แล้วส่ง query ถามเพื่อนบ้านก่อน</p>
+    <p>นี่คือเหตุผลที่ EIGRP [[conv|converge]] เร็ว ลองตัดลิงก์ R2–R3 ทั้งสองกรณี แล้วดูว่าขั้นตอนต่างกันตรงไหน</p>
+    <div class="fig" id="fig-fail"></div>
+    <div id="q-fail"></div>
+  </section>
+
+  <section class="idea col" id="s-method">
+    <h2>วิธีทำให้เร็วในห้องสอบ<span class="en">Fast method: one table, two passes</span></h2>
+    <p class="key">ตีตารางหนึ่งตาราง ไล่สองรอบ รอบแรกหา FD ทุกทางแล้ววงตัวที่ต่ำสุด รอบสองเอา RD ของทางที่เหลือมาเทียบกับตัวที่วงไว้</p>
+    <ol>
+      <li>ทำตาราง: ทาง (ชื่อเพื่อนบ้าน) | [[rd|RD]] | [[cost]] | [[fd|FD]] | FS?</li>
+      <li>FD = cost + RD ทุกแถว (ถ้าโจทย์ให้ FD มาแล้ว ข้ามขั้นนี้)</li>
+      <li>วง FD ที่ต่ำที่สุด แถวนั้นคือ [[successor]] และตัวเลขนี้คือ FD ของเส้นทาง</li>
+      <li>แถวที่เหลือดูแค่ช่อง RD: ถ้า RD &lt; ตัวที่วงไว้ เป็น [[fs|FS]] ถ้ามากกว่าหรือเท่ากัน ไม่เป็น</li>
+      <li>เขียนคำตอบเป็น [[nexthop]] และ [[exitif]] ของ successor และ FS</li>
+    </ol>
+    <p>ตารางของ router R จากรูปแรก:</p>
+    <div class="tw"><table class="mtable">
+      <thead><tr><th>ทาง</th><th>RD</th><th>cost</th><th>FD</th><th>RD &lt; 35 ?</th></tr></thead>
+      <tbody>
+        <tr><td>A</td><td class="c-amber">30</td><td class="c-teal">20</td><td class="c-violet">50</td><td class="c-blue">30 &lt; 35 เป็น FS</td></tr>
+        <tr class="win"><td>B</td><td class="c-amber">25</td><td class="c-teal">10</td><td class="c-violet"><b>35</b></td><td class="c-green">successor</td></tr>
+        <tr><td>C</td><td class="c-amber">40</td><td class="c-teal">5</td><td class="c-violet">45</td><td class="muted">40 &lt; 35 ไม่จริง</td></tr>
+        <tr><td>D</td><td class="c-amber">15</td><td class="c-teal">33</td><td class="c-violet">48</td><td class="c-blue">15 &lt; 35 เป็น FS</td></tr>
+      </tbody>
+    </table></div>
+    <p>ถ้า B ล่ม ตัวที่ขึ้นแทนคือ FS ที่ FD ต่ำที่สุด คือ D (48) ไม่ใช่ C (45) เพราะ C ไม่ผ่านเงื่อนไขตั้งแต่แรก</p>
+    <div id="q-method"></div>
+  </section>
+
+  <section class="idea col" id="s-drill">
+    <h2>ลองทำเองแบบข้อสอบ<span class="en">Exam drill</span></h2>
+    <p>โจทย์สุ่มใหม่ทุกครั้ง มี 3 ถึง 5 ทาง แบบ "รูป" ให้ cost กับ RD มาแล้วให้หา FD เอง แบบ "topology table" ให้ FD/RD มาเป็นเลข EIGRP จริงเหมือนในสไลด์ กรอกเสร็จกดตรวจ แล้วกดดูวิธีทำเพื่อดูว่าควรเขียนอะไรในกระดาษคำตอบ</p>
+  </section>
+  <div class="drill" id="drill"></div>
+
+  <a class="next" href="ospf.html"><div class="s">บทถัดไป</div><div class="t">OSPF <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div></a>
+</main>
+<script src="assets/core.js"></script>
+<script src="assets/eigrp-concepts.js"></script>
+<script src="eigrp.js"></script>
+</body>
+</html>
