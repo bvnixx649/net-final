@@ -319,7 +319,7 @@
     fr(s24, [0, 2560], b('172.16.4.0', 23, 24), '<b>200 hosts</b>: 2<sup>8</sup> − 2 = 254 ≥ 200 → n = 8 → <b>/24</b> เอาวงว่าง 010 (172.16.4.0/23) มาแบ่ง 1 บิต ได้ 172.16.4.0 กับ 172.16.5.0 ยังขาดอีกวง จึงแบ่ง 011 (172.16.6.0/23) ต่อ ได้ 172.16.6.0 ส่วน 172.16.7.0/24 เหลือว่างไว้ใช้ต่อ', 5);
     fr(s25, [1024, 2560], b('172.16.7.0', 24, 25), '<b>100 hosts</b>: 2<sup>7</sup> − 2 = 126 ≥ 100 → n = 7 → <b>/25</b> แบ่ง 172.16.7.0/24 ที่เหลือจากขั้นก่อนออกเป็นสองวง ได้ 172.16.7.0/25 กับ 172.16.7.128/25 พอดี 2 วง', 7);
     fr(s26, [2048, 2560], b('172.16.8.0', 23, 26), '<b>50 hosts</b>: 2<sup>6</sup> − 2 = 62 ≥ 50 → n = 6 → <b>/26</b> เอาวงว่าง 100 (172.16.8.0/23) มาแบ่ง จาก /23 ไป /26 ยืม 3 บิต ได้ 8 วง ใช้ 4 วงแรก 172.16.8.0, .64, .128, .192', 11);
-    fr(s30, [2304, 2368], b('172.16.9.0', 26, 30), '<b>2 hosts</b> (ลิงก์ระหว่าง router): 2<sup>2</sup> − 2 = 2 ≥ 2 → n = 2 → <b>/30</b> เอาวงว่าง 172.16.9.0/26 มาแบ่ง ยืม 4 บิตได้ 16 วงย่อยขนาด 4 ใช้ 4 วงแรก 172.16.9.0, .4, .8, .12', 15);
+    fr(s30, [2304, 2336], b('172.16.9.0', 26, 30), '<b>2 hosts</b> (ลิงก์ระหว่าง router): 2<sup>2</sup> − 2 = 2 ≥ 2 → n = 2 → <b>/30</b> เอาวงว่าง 172.16.9.0/26 มาแบ่ง ยืม 4 บิตได้ 16 วงย่อยขนาด 4 ใช้ 4 วงแรก 172.16.9.0, .4, .8, .12', 15);
     fr(s30, [0, 4096], '<span class="d">ใช้ไป 172.16.0.0 – 172.16.9.15 ที่เหลือว่างตั้งแต่ 172.16.9.16</span>', 'ครบทุกแผนกและไม่มีวงไหนทับกัน วงถัดไปเริ่มที่ broadcast + 1 ของวงก่อนเสมอ เหลือ IP ว่าง 1,776 ตัวไว้ใช้ในอนาคต', 15);
 
     const ab = ABar(host);
@@ -333,7 +333,7 @@
     all.forEach(o => tbody.append(el('tr', { html: `<td><span class="sw" style="background:${DCOL(o.d)}"></span>${o.hosts}</td><td>${IP.toStr(o.net)}/${o.p}</td><td>${IP.toStr(o.first)} – ${IP.toStr(o.last)}</td><td>${IP.toStr(o.bcast)}</td>` })));
     const segsOf = f => F[f].segs.map(([o, p, st, d, lab]) => {
       const size = 2 ** (32 - p), used = st === 'used';
-      return { id: o + '/' + p, a: o, b: o + size, cls: used ? 'used' : 'free', bg: used ? DCOL(d) : '', label: used ? (GROUPS[d].hosts + ' hosts') : (lab || (p === 20 ? '172.16.0.0/20' : '')), sub: p === 20 ? '4,096 IP' : IP.toStr(S + o).split('.').slice(2).join('.') + '/' + p };
+      return { id: o + '/' + p, a: o, b: o + size, cls: used ? 'used' : 'free', bg: used ? DCOL(d) : '', label: used ? (GROUPS[d].hosts + '') : (lab || (p === 20 ? '172.16.0.0/20' : '')), sub: p === 20 ? '4,096 IP' : IP.toStr(S + o).split('.').slice(2).join('.') + '/' + p };
     });
     const sc = Hop.scrub(host, {
       stops: [{ label: '<span class="k">172.16.0.0/20</span> ก้อนที่ได้มา' }, { label: '<span class="k">/23</span> 500 hosts ×2' }, { label: '<span class="k">/24</span> 200 hosts ×3' }, { label: '<span class="k">/25</span> 100 hosts ×2' }, { label: '<span class="k">/26</span> 50 hosts ×4' }, { label: '<span class="k">/30</span> 2 hosts ×4' }, { label: 'สรุปทั้งก้อน' }],

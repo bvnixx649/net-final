@@ -127,3 +127,5 @@ button.bit:active { transform: scale(.92); }
 .given .g { background: var(--bg); border-radius: 12px; padding: 8px 12px; font-size: 15px; }
 .given .g b { font-family: var(--mono); }
 .score { font-weight: 600; margin-left: auto; align-self: center; }
+
+@media (max-width: 560px) { .tiles { gap: 4px; } .tiles .tl { min-width: 0; flex: 1 1 0; height: 50px; padding: 0 4px; font-size: 20px; } .tiles .pre { font-size: 20px; } .tiles .dot { font-size: 18px; } }
