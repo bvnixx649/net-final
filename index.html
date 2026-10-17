@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hop | Computer Network Final</title>
+<meta name="description" content="ติว final วิชา 254363 Computer Network แบบ interactive: VLSM, Routing, RIP, EIGRP, OSPF, Security, ACL">
+<meta name="theme-color" content="#FBFBFA">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  .home-head { padding: 44px 0 10px; }
+  .home-head h1 { font-size: clamp(40px, 8vw, 72px); line-height: 1.02; letter-spacing: -.04em; margin: 0 0 16px; font-weight: 700; text-wrap: balance; }
+  .home-head p { font-size: clamp(18px, 2.4vw, 21px); line-height: 1.6; color: var(--ink-2); margin: 0; max-width: 34em; text-wrap: pretty; }
+  .world { margin: 28px auto 0; max-width: var(--wide); background: var(--band); border-radius: 32px; padding: 14px; position: relative; overflow: hidden; }
+  .world svg { display: block; width: 100%; height: auto; }
+  .world .zone { cursor: pointer; }
+  .world .zone .hull { fill: var(--zc-s); stroke: var(--zc); stroke-width: 2; stroke-dasharray: 6 6; opacity: .0; transition: opacity 220ms ease; }
+  .world .zone .zl { font: 600 15px var(--font); fill: var(--zc); opacity: .9; transition: opacity 200ms ease; }
+  .world .zone:hover .hull, .world .zone.on .hull { opacity: 1; }
+  .world.picked .zone:not(.on) .dev { opacity: .35; }
+  .world .dev { transition: opacity 220ms ease; }
+  .world .link { stroke: var(--line-2); stroke-width: 3; stroke-linecap: round; fill: none; }
+  .world .zone:focus { outline: none; }
+  .world .zone:focus-visible .hull { opacity: 1; stroke-dasharray: none; }
+  .z-ip { --zc: var(--c-violet); --zc-s: var(--c-violet-s); }
+  .z-rt { --zc: var(--c-blue); --zc-s: var(--c-blue-s); }
+  .z-sec { --zc: var(--c-rose); --zc-s: var(--c-rose-s); }
+  .z-pr { --zc: var(--c-teal); --zc-s: var(--c-teal-s); }
+  .hint { text-align: center; font-size: 14px; color: var(--muted); margin: 10px 0 0; }
+
+  .chaps { max-width: var(--col); margin: 44px auto 0; display: grid; gap: 2px; }
+  .ch { display: grid; grid-template-columns: 48px 1fr 24px; gap: 16px; align-items: center; padding: 18px 16px 18px 12px; border-radius: 20px; color: var(--ink); transition: background-color 200ms ease, transform 140ms var(--ease), opacity 220ms ease; }
+  .ch:active { transform: scale(.99); }
+  .ch .n { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; font: 600 17px var(--mono); background: var(--surface); color: var(--ink-2); transition: background-color 200ms ease, color 200ms ease; }
+  .ch .t { font-size: 20px; font-weight: 700; letter-spacing: -.02em; line-height: 1.3; }
+  .ch .s { font-size: 15px; color: var(--ink-2); line-height: 1.55; margin-top: 3px; text-wrap: pretty; }
+  .ch svg { width: 20px; height: 20px; color: var(--muted); }
+  .ch.on { background: var(--zc-s); }
+  .ch.on .n { background: var(--zc); color: #fff; }
+  .chaps.picked .ch:not(.on) { opacity: .45; }
+  @media (hover: hover) and (pointer: fine) { .ch:hover { background: var(--surface); } .ch.on:hover { background: var(--zc-s); } }
+  .grouphead { font-size: 13px; font-weight: 600; color: var(--muted); margin: 26px 12px 6px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="col home-head">
+    <h1>Computer Network Final</h1>
+    <p>ทุกเรื่องที่อาจารย์บอกว่าจะออกสอบ ในเครือข่ายเดียว แตะส่วนไหนของภาพก็ได้เพื่อดูว่าเรื่องนั้นอยู่บทไหน และข้อสอบจะถามอะไร</p>
+  </div>
+  <div class="world" id="world"></div>
+  <p class="hint" id="hint">แตะกลุ่มอุปกรณ์ในภาพ</p>
+  <div class="chaps" id="chaps"></div>
+</main>
+<script src="assets/core.js"></script>
+<script src="home.js"></script>
+</body>
+</html>
