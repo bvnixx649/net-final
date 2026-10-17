@@ -288,8 +288,26 @@ const Hop = (() => {
   const shuffle = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // page setup: bar + turn [[key]] / [[key|label]] markers in the prose into tappable terms
+  // number sections n.m and their h3s n.m.k, and list them under the current chapter in the menu
+  function numberSections(n) {
+    if (!n || n > 8) return;
+    const toc = [];
+    $$('main section.idea').forEach((s, i) => {
+      const h2 = s.querySelector(':scope > h2'); if (!h2 || h2.querySelector('.num')) return;
+      const num = `${n}.${i + 1}`;
+      if (!s.id) s.id = `s${n}-${i + 1}`;
+      const c = h2.cloneNode(true); c.querySelectorAll('.en').forEach(x => x.remove());
+      h2.prepend(el('span', { class: 'num', text: num }));
+      toc.push({ num, id: s.id, t: c.textContent.trim() });
+      s.querySelectorAll(':scope > h3').forEach((h3, j) => h3.prepend(el('span', { class: 'num', text: `${num}.${j + 1}` })));
+    });
+    const cur = $('.menu nav a[aria-current="page"]');
+    if (cur && toc.length) cur.after(el('div', { class: 'toc' }, toc.map(x => el('a', { href: '#' + x.id, html: `<b>${x.num}</b><span>${esc(x.t)}</span>`, onclick: () => $('.menu').classList.remove('open') }))));
+  }
+
   function page(n) {
     bar(n);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => numberSections(n)); else numberSections(n);
     $$('main p, main li, main h2, main h3, main td').forEach(e => {
       if (e.innerHTML.includes('[[')) e.innerHTML = e.innerHTML.replace(/\[\[([\w-]+)(?:\|([^\]]+))?\]\]/g, (m, k, l) => t(k, l));
     });
