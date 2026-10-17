@@ -1,11 +1,13 @@
 /* VLSM chapter: bit cells, octet tiles, address bars */
+:root { --on-fill: #fff; }
+:root:not([data-theme="light"]) { --on-fill: #111114; }
 :root {
   --d1: #7A45D8; --d1s: #EEE5FC; --d2: #0C7F91; --d2s: #D9F0F3; --d3: #D0344F; --d3s: #FCE3E7;
   --d4: #A23E8C; --d4s: #F7E1F1; --d5: #4F5D75; --d5s: #E3E7EE; --d6: #8C5A2B; --d6s: #F3E7DA;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+:root:not([data-theme="light"]) {
   --d1: #B08CFF; --d1s: rgba(176,140,255,.18); --d2: #45C6D8; --d2s: rgba(69,198,216,.16); --d3: #FF7C92; --d3s: rgba(255,124,146,.16);
-  --d4: #E58BD0; --d4s: rgba(229,139,208,.16); --d5: #A5B3CC; --d5s: rgba(165,179,204,.16); --d6: #E0A672; --d6s: rgba(224,166,114,.16); } }
+  --d4: #E58BD0; --d4s: rgba(229,139,208,.16); --d5: #A5B3CC; --d5s: rgba(165,179,204,.16); --d6: #E0A672; --d6s: rgba(224,166,114,.16); }
 :root[data-theme="dark"] {
   --d1: #B08CFF; --d1s: rgba(176,140,255,.18); --d2: #45C6D8; --d2s: rgba(69,198,216,.16); --d3: #FF7C92; --d3s: rgba(255,124,146,.16);
   --d4: #E58BD0; --d4s: rgba(229,139,208,.16); --d5: #A5B3CC; --d5s: rgba(165,179,204,.16); --d6: #E0A672; --d6s: rgba(224,166,114,.16); }
@@ -19,9 +21,9 @@
 .bit.sub { background: var(--c-amber-s); color: var(--c-amber); }
 .bit.host { background: var(--c-green-s); color: var(--c-green); }
 .bit.lock { background-image: repeating-linear-gradient(135deg, transparent 0 5px, rgba(0,0,0,.05) 5px 7px); }
-.bit.on.net { background: var(--c-blue); color: #fff; }
-.bit.on.sub { background: var(--c-amber); color: #fff; }
-.bit.on.host { background: var(--c-green); color: #fff; }
+.bit.on.net { background: var(--c-blue); color: var(--on-fill); }
+.bit.on.sub { background: var(--c-amber); color: var(--on-fill); }
+.bit.on.host { background: var(--c-green); color: var(--on-fill); }
 .bit.cut::after { content: ""; position: absolute; left: -3.5px; top: -6px; bottom: -6px; width: 3px; border-radius: 3px; background: var(--ink); }
 button.bit:active { transform: scale(.92); }
 .octlab { position: absolute; top: -22px; left: 0; right: 0; text-align: center; font: 600 13px var(--mono); color: var(--ink-2); }
@@ -65,7 +67,7 @@ button.bit:active { transform: scale(.92); }
 .abar .seg.free { background: var(--surface); color: var(--muted); }
 .abar .seg.split { background: var(--surface-2); }
 .abar .seg.hit { box-shadow: inset 0 0 0 3px var(--ink); z-index: 2; }
-.abar .seg.used { color: #fff; }
+.abar .seg.used { color: var(--on-fill); }
 .abar .seg.used .b { opacity: .9; }
 .abar .seg.tiny .a, .abar .seg.tiny .b { display: none; }
 .abar .seg.small .b { display: none; }

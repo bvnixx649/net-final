@@ -68,11 +68,15 @@ const Hop = (() => {
     addEventListener('scroll', onScroll, { passive: true }); onScroll();
   }
   function toggleTheme() {
-    const r = document.documentElement, dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    const r = document.documentElement, dark = r.dataset.theme !== 'light';
     r.dataset.theme = dark ? 'light' : 'dark';
+    const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = dark ? '#FBFBFA' : '#0F0F12';
     try { localStorage.setItem('hop-theme', r.dataset.theme); } catch (e) {}
   }
-  try { const t = localStorage.getItem('hop-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  // dark is the default; a saved choice wins
+  let saved = null; try { saved = localStorage.getItem('hop-theme'); } catch (e) {}
+  document.documentElement.dataset.theme = saved || 'dark';
+  const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = (saved || 'dark') === 'dark' ? '#0F0F12' : '#FBFBFA';
 
   /* ---------- concepts + sheet ---------- */
   const C = {};
