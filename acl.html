@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Firewall &amp; ACL | Hop</title>
+<meta name="theme-color" content="#0F0F12">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/core.css">
+<link rel="stylesheet" href="assets/ip.css">
+<link rel="stylesheet" href="assets/acl.css">
+</head>
+<body>
+<main>
+  <div class="col head">
+    <h1>Firewall &amp; ACL</h1>
+    <p class="lede">ข้อสอบจะให้รูปเครือข่ายที่มี router, LAN และ server แล้วถามว่า "ถ้าจะบล็อก traffic นี้ ต้องเขียนคำสั่งอะไร" เราต้องเขียนบรรทัด [[acl|ACL]] ให้ถูก แล้วบอกว่าต้องเอาไปใส่ที่ [[iface|interface]] ไหน ทิศ in หรือ out อีกข้อที่จะถามคือ [[firewall]] มีกี่ประเภท แต่ละแบบกันการโจมตีแบบไหนได้</p>
+  </div>
+
+  <div class="fig map" id="map"></div>
+
+  <section class="idea col" id="s-fw">
+    <h2>Firewall แต่ละแบบดูลึกไม่เท่ากัน<span class="en">Packet filtering, Stateful, Proxy, Hybrid, Personal</span></h2>
+    <p class="key">[[firewall|Firewall]] คือตัวคัดกรองที่ตัดสินว่า packet ไหนผ่าน packet ไหนทิ้ง ทุกแบบทำงานเหมือนกันตรงนี้ ที่ต่างกันคือมองเห็นข้อมูลได้ลึกแค่ไหน ยิ่งดูลึกยิ่งจับการโจมตีได้มาก แต่ยิ่งช้าและแพง</p>
+    <p>[[pf]] อ่านแค่ [[header]] ของทีละ packet [[stateful]] จำเพิ่มว่าการเชื่อมต่อไหนเปิดอยู่ใน [[statetable]] [[proxy]] เปิดอ่านเนื้อหาในชั้น Application และคุยแทนเครื่องข้างใน [[hybrid]] รวมทุกอย่างไว้ด้วยกัน ส่วน [[personal]] อยู่บนคอมพิวเตอร์เครื่องเดียว</p>
+    <p>เลือกประเภท แล้วดูว่า packet ปกติและการโจมตีแต่ละแบบที่ยิงเข้ามาจาก Internet ผ่านไปได้หรือไม่ โจทย์สมมติว่ากฎตั้งไว้ให้คนนอกเข้าได้แค่เว็บ (port 80) ของ server</p>
+    <div class="fig" id="fig-fw"></div>
+    <p>ข้อสังเกตที่ออกสอบได้: [[sniff|Sniffing]] ไม่มี firewall ไหนกันได้ เพราะผู้โจมตีแค่แอบอ่านระหว่างทาง ต้องใช้การเข้ารหัส ส่วน [[spoof|IP spoofing]] เป็นจุดอ่อนที่สไลด์เขียนไว้ตรงๆ ของ packet filtering</p>
+    <p>ในองค์กรจริง firewall มักวางคั่นโซน: [[untrusted]] (Internet), [[dmz|DMZ]] ที่วาง server ซึ่งคนนอกต้องเข้า เช่น web และ mail, และ [[trusted]] คือ LAN ภายใน</p>
+    <div id="q-fw"></div>
+  </section>
+
+  <section class="idea col" id="s-list">
+    <h2>ACL คือรายการกฎ ตรวจจากบนลงล่าง<span class="en">Top-down, first match wins, implicit deny</span></h2>
+    <p class="key">[[acl|ACL]] คือรายการ [[statement]] ที่ router เก็บไว้ packet หนึ่งตัวถูกเทียบทีละบรรทัดจากบนลงล่าง บรรทัดแรกที่ตรงเป็นตัวตัดสิน ([[permit]] หรือ [[deny]]) ถ้าไม่ตรงสักบรรทัดจะโดน [[implicit]] ที่ซ่อนอยู่ท้ายสุด</p>
+    <p>นี่คือ packet filtering firewall ที่ทำบน router ตัวอย่างด้านล่างเป็น ACL ที่ตั้งใจห้ามเครื่อง 172.16.3.2 แต่ให้เครื่องอื่นใน LAN 172.16.3.0 ผ่าน เลือก packet แล้วดูว่ามันเดินลงไปหยุดที่บรรทัดไหน จากนั้นลองสลับลำดับ หรือเพิ่ม permit any ท้ายรายการ</p>
+    <div class="fig" id="fig-list"></div>
+    <p>สามกฎที่ต้องจำจากภาพนี้: [[firstmatch]], บรรทัดเจาะจงไว้บน บรรทัดกว้างไว้ล่าง, และถ้าโจทย์อยากให้อย่างอื่นผ่านตามปกติ ต้องปิดท้ายด้วย permit เอง</p>
+    <div id="q-list"></div>
+  </section>
+
+  <section class="idea col" id="s-wild">
+    <h2>Wildcard mask: 0 ต้องตรง 1 ไม่สนใจ<span class="en">Wildcard mask = inverse of the subnet mask</span></h2>
+    <p class="key">ใน ACL ทุก address มี [[wildcard]] ตามหลัง router อ่านทีละบิต: บิตที่ wildcard เป็น 0 ต้องตรงกับ address ที่เขียน บิตที่เป็น 1 จะเป็นอะไรก็ได้</p>
+    <p>wildcard คือ [[smask|subnet mask]] กลับด้าน หาได้จาก 255 ลบทีละ octet วง /24 ใช้ 0.0.0.255 วง /27 ใช้ 0.0.0.31 ถ้าเป็นเครื่องเดียวใช้ 0.0.0.0 หรือเขียนคำว่า [[hostkw|host]] นำหน้า ถ้าทุก address ใช้ [[anykw|any]]</p>
+    <div id="eq-wc"></div>
+    <p>ในทางปฏิบัติไม่ต้องแปลงฐานสองทั้ง 32 บิต: octet ที่ wildcard เป็น 0 ให้เทียบเลขฐานสิบตรงๆ octet ที่เป็น 255 ข้ามไปเลย มีแค่ octet ที่อยู่ระหว่างกลางที่ต้องดูทีละบิต แตะ octet ไหนก็ได้เพื่อดูบิตข้างใน</p>
+    <div class="fig" id="fig-wc"></div>
+    <div id="q-wc"></div>
+  </section>
+
+  <section class="idea col" id="s-type">
+    <h2>Standard หรือ Extended และวางที่ไหน<span class="en">Standard near destination, extended near source</span></h2>
+    <p class="key">[[standard]] ดูได้แค่ IP ต้นทาง [[extended]] ดูได้ทั้งต้นทาง ปลายทาง protocol และ port เลขของ ACL บอก router ว่าเป็นชนิดไหน และชนิดเป็นตัวกำหนดว่าต้องวางใกล้ปลายทางหรือใกล้ต้นทาง</p>
+    <div id="tbl-type"></div>
+    <p>ทิศ [[inbound|in]] กับ [[outbound|out]] มองจากตัว router เสมอ packet ที่กำลังเข้า router ทางขาไหนคือ in ของขานั้น packet ที่กำลังออกคือ out ACL ที่วางผิดทิศจะไม่เจอ packet ที่ตั้งใจจะบล็อกเลย</p>
+    <p>โจทย์: ห้าม PC 172.16.3.2 เข้าถึง Server 172.16.4.13 แต่เครื่องนี้ยังต้องออก Internet ได้ และเครื่องอื่นต้องใช้ server ได้ปกติ เลือกชนิด ACL แล้วเลือกขาและทิศที่จะวาง ดูว่ามีอะไรถูกบล็อกเกินโดยไม่ตั้งใจบ้าง</p>
+    <div class="fig" id="fig-place"></div>
+    <p>สไลด์ p.41 apply ACL 120 แบบ <code>in</code> ที่ f0/0 ทั้งที่ทุกบรรทัดเขียนถึง packet ที่วิ่ง<b>ไปหา</b> server ซึ่งออกจาก router ทาง f0/0 ตามหลักจึงต้องเป็น <code>out</code> (ชีทแล็บ 7 ใช้ out ที่ f0/0 ทุกตัวอย่าง) ถ้าข้อสอบเอารูปนี้มาถาม ให้เขียนตามหลักและอธิบายทิศสั้นๆ</p>
+    <p>ถ้าโจทย์พูดถึงการ telnet เข้า<b>ตัว router</b> เอง ไม่ได้ผ่าน router ไปที่อื่น ให้ใช้ standard ACL กับ [[vty|line vty และ access-class]] แทนการผูกที่ interface</p>
+    <div id="q-type"></div>
+  </section>
+
+  <section class="idea col" id="s-port">
+    <h2>บริการไหนใช้ port อะไร<span class="en">Well-known ports</span></h2>
+    <p class="key">ถ้าโจทย์พูดถึงบริการ เช่น Telnet, เว็บ, FTP หรือ ping ต้องใช้ extended ACL ระบุ [[proto|protocol]] และ [[port]] ปลายทางด้วย [[eq|eq]] หลังปลายทาง ยกเว้น ping ที่ใช้ [[icmp|ICMP]] ซึ่งไม่มี port</p>
+    <p>แตะแต่ละบริการเพื่อดูว่าในคำสั่งต้องเขียนส่วนนี้อย่างไร ตาราง port ในชีทแล็บ 7 มี 20, 21, 23, 80 และ 161 ที่เหลือเป็น port มาตรฐานที่ควรรู้</p>
+    <div class="fig in-col" id="fig-port"></div>
+    <div id="q-port"></div>
+  </section>
+
+  <section class="idea col" id="s-build">
+    <h2>ประกอบคำสั่งทีละชิ้น<span class="en">ACL command builder</span></h2>
+    <p class="key">ทุกข้อทำตามลำดับเดิม: หาต้นทางกับปลายทาง, ตัดสินว่า standard หรือ extended, เขียนบรรทัดจากเจาะจงไปกว้าง, ปิดท้ายด้วย permit ถ้าต้องให้อย่างอื่นผ่าน, แล้วเลือกขาและทิศ</p>
+    <p>แตะเครื่องในรูปเพื่อเลือกต้นทาง แตะอีกครั้งเพื่อเลือกปลายทาง จากนั้นเลือกบริการและสิ่งที่ต้องการ คำสั่งทั้งชุดจะประกอบให้ทันที แตะคำไหนในคำสั่งเพื่อดูว่าคำนั้นมาจากไหน</p>
+    <div class="fig" id="fig-build"></div>
+  </section>
+
+  <section class="idea col" id="s-drill">
+    <h2>ลองเขียนเองแบบข้อสอบ<span class="en">Exam drill</span></h2>
+    <p>โจทย์สุ่มใหม่ทุกครั้ง ทั้งเลข IP ชื่อขา และขนาดวง พิมพ์คำสั่งทั้งหมดในช่อง บรรทัดละคำสั่ง (ใส่หรือไม่ใส่ <code>R1(config)#</code> ก็ได้ ตัวพิมพ์เล็กใหญ่ไม่มีผล) ระบบจะเอา ACL ของคุณไปลองกับ packet หลายสิบแบบ แล้วบอกว่ามีกรณีไหนผลไม่ตรงกับที่โจทย์ต้องการ</p>
+  </section>
+  <div class="drill" id="drill"></div>
+
+  <a class="next" href="protocols.html"><div class="s">บทถัดไป</div><div class="t">Security protocols &amp; NAT <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div></a>
+</main>
+<script src="assets/core.js"></script>
+<script src="assets/ipcalc.js"></script>
+<script src="assets/acl-concepts.js"></script>
+<script src="acl.js"></script>
+</body>
+</html>

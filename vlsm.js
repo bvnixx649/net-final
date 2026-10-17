@@ -259,7 +259,7 @@
     let p = 26, v = 37;
     const seg = el('div', { class: 'seg', role: 'group', 'aria-label': 'prefix' });
     [25, 26, 27, 28, 29].forEach(k => seg.append(el('button', { 'aria-pressed': String(k === p), text: '/' + k, onclick: () => { p = k; upd(); } })));
-    host.append(el('div', { class: 'ctrls', style: 'margin:0 0 6px' }, seg, el('span', { class: 'readout', html: 'ลากหมุด หรือแตะบนแถบ' })));
+    host.append(el('div', { class: 'ctrls', style: 'margin:0 0 20px' }, seg, el('span', { class: 'readout', html: 'ลากหมุด หรือแตะบนแถบ' })));
     const ab = ABar(host);
     const marker = el('div', { class: 'marker' }, el('div', { class: 'knob' }));
     ab.wrap.append(marker);
