@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Router เลือกทางยังไง | Hop</title>
+<meta name="theme-color" content="#0F0F12">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/core.css">
+<link rel="stylesheet" href="assets/routing.css">
+</head>
+<body>
+<main>
+  <div class="col head">
+    <h1>Router เลือกทางยังไง</h1>
+    <p class="lede">ส่วนนี้ไม่มีการคำนวณ IP ข้อสอบจะให้รูปหรือรายละเอียดมา แล้วถามว่า [[router]] ทำอะไรกับแพ็กเก็ตที่เข้ามา ([[flow|decision flow]]), อ่านบรรทัดใน [[rtable]] ออกไหม, static, RIP, EIGRP, OSPF เป็นแบบไหนและใช้ [[metric]] อะไร และถ้ามีหลายแหล่งบอกทางไปที่เดียวกัน router จะเชื่อใคร ซึ่งตัดสินด้วย [[ad]]</p>
+  </div>
+
+  <div class="fig map" id="map"></div>
+
+  <section class="idea col" id="s-router">
+    <h2>Router ทำสองอย่าง: เลือกทาง แล้วส่งต่อ<span class="en">Two functions of a router</span></h2>
+    <p class="key">[[router]] ต่อหลายเครือข่ายเข้าด้วยกัน งานของมันมีสองอย่าง คือหาว่าแพ็กเก็ตควรไปทางไหน แล้วส่งต่อออกไป ทั้งสองอย่างดูจาก [[rtable]] ของตัวเองเท่านั้น</p>
+    <p>[[iface]] แต่ละขาของ router ต่อกับเครือข่ายคนละวง และมี IP ที่อยู่ในวงนั้น พอตั้ง IP แล้วเปิดขานั้น router รู้จักวงนั้นทันที และเพิ่มสองบรรทัดลงตาราง คือ [[connected|C]] วงที่ต่ออยู่ กับ [[local|L]] IP ของขานั้นเอง ลองแตะแต่ละขาของ R1</p>
+    <div class="fig" id="fig-ifaces"></div>
+    <p>สไลด์สรุปหลักของ routing table ไว้ 3 ข้อ ซึ่งเห็นได้จากรูปบนสุดของหน้า:</p>
+    <ol>
+      <li>router แต่ละตัวตัดสินใจเองคนเดียว จากข้อมูลในตารางของตัวเองเท่านั้น</li>
+      <li>ตารางของ router ตัวหนึ่ง ไม่จำเป็นต้องเหมือนของอีกตัว (R1 กับ R2 มีบรรทัดไม่เหมือนกัน)</li>
+      <li>รู้ทางไปไม่ได้แปลว่ารู้ทางกลับ R1 มีทางไป 192.168.2.0/24 ไม่ได้แปลว่า R2 มีทางกลับมา 192.168.1.0/24 ต้องตั้งที่ R2 แยกอีกที</li>
+    </ol>
+    <div id="q-router"></div>
+  </section>
+
+  <section class="idea col" id="s-flow">
+    <h2>แพ็กเก็ตเข้ามาแล้วไปไหน<span class="en">Packet forwarding decision process</span></h2>
+    <p class="key">แพ็กเก็ตเข้ามาเป็นบิตที่ [[layers|Layer 1]] router [[encap|แกะ]]ขึ้นไปถึง Layer 3 เพื่ออ่าน [[destip]] แล้วหาใน [[rtable]] ด้วย [[lpm]] เจอแล้วห่อกลับลงมาส่งออก [[exitif]] ถ้าไม่เจอเลยก็ [[drop|ทิ้ง]]</p>
+    <p>เลือกปลายทางแล้วลากแถบเวลาดูทีละจุด ลองให้ครบทั้งสามแบบ เพราะคำตอบในข้อสอบต้องบอกผลให้ครบ: ปลายทางอยู่ใน [[connected|วงที่ต่อตรง]], อยู่วงไกลต้องส่งให้ [[nexthop]], และไม่มี entry ไหนตรงเลย</p>
+    <div class="fig" id="fig-flow"></div>
+    <p>ตอนเทียบกับตาราง router ดูว่า IP ปลายทางตกอยู่ในวงไหนบ้าง ถ้าตรงหลายบรรทัด ให้เอาบรรทัดที่ prefix ยาวที่สุด ลองเปิด [[defroute]] แล้วส่งไป 192.168.2.20 จะเห็นว่าตรงทั้ง /24 และ /0 router เลือก /24 เพราะเจาะจงกว่า default route จึงถูกใช้เฉพาะตอนที่ไม่มีอย่างอื่นตรงเลย</p>
+    <p>ถ้าข้อสอบถามว่าแพ็กเก็ตเข้ามาแล้ว router ทำอะไร เขียนตามลำดับนี้:</p>
+    <ol>
+      <li>รับบิตเข้ามาทาง interface แล้วประกอบเป็นเฟรม (Layer 1 → Layer 2)</li>
+      <li>แกะ header และ trailer ของ Layer 2 ออก อ่าน IP ปลายทางใน IP header (Layer 3)</li>
+      <li>หา entry ใน routing table ที่ตรงกับ IP ปลายทางยาวที่สุด</li>
+      <li>ถ้าเป็นวงที่ต่อตรง ส่งถึงเครื่องปลายทางเลย ถ้าเป็นวงไกล ส่งให้ next hop โดยห่อเฟรมใหม่แล้วส่งออก exit interface</li>
+      <li>ถ้าไม่มี entry ไหนตรงและไม่มี default route ทิ้งแพ็กเก็ต</li>
+    </ol>
+    <div id="q-flow"></div>
+  </section>
+
+  <section class="idea col" id="s-entry">
+    <h2>อ่านบรรทัดใน routing table<span class="en">show ip route</span></h2>
+    <p class="key">หนึ่งบรรทัดของ show ip route บอกครบว่าเส้นทางนี้ได้มาจากไหน ([[code]]) ไปวงอะไร ([[network]]) น่าเชื่อแค่ไหน ([[ad]]) ไกลแค่ไหน ([[metric]]) ส่งให้ใคร ([[nexthop]]) และออกขาไหน ([[exitif]])</p>
+    <p>แตะแต่ละช่องเพื่อดูความหมาย แล้วสลับตัวอย่างดูว่าแต่ละแหล่งหน้าตาต่างกันยังไง บรรทัด O, D, S, C, L มาจากสไลด์ ส่วนบรรทัด R คิดจาก topology ของแล็บ 6</p>
+    <div class="fig" id="fig-entry"></div>
+    <div id="q-entry"></div>
+  </section>
+
+  <section class="idea col" id="s-static">
+    <h2>Static ให้คนกำหนด Dynamic ให้ router คุยกันเอง<span class="en">Static vs dynamic routing</span></h2>
+    <p class="key">[[static]] คือเส้นทางที่ผู้ดูแลพิมพ์เองทีละวง ส่วน [[dynamic]] ให้ router แลกข้อมูลกันเอง เพื่อค้นหาวงที่อยู่ไกลและหาทางใหม่เมื่อทางเดิมใช้ไม่ได้</p>
+    <p>รูปนี้คือ topology ของแล็บ 6 แตะแต่ละส่วนของคำสั่งเพื่อดูว่ามาจากตรงไหนในรูป แล้วแตะลิงก์ A–B เพื่อตัดสาย เทียบกันระหว่าง static กับ dynamic ลิงก์ A–C เป็นสายที่แล็บเพิ่มในการทดลองที่ 2</p>
+    <div class="fig" id="fig-static"></div>
+    <p>ตารางเปรียบเทียบจากสไลด์:</p>
+    <div class="tw"><table class="cmp">
+      <thead><tr><th></th><th>Static</th><th>Dynamic</th></tr></thead>
+      <tbody>
+        <tr><td>ความยากในการตั้งค่า</td><td>ยิ่งเครือข่ายใหญ่ยิ่งยาก</td><td>ไม่ขึ้นกับขนาดเครือข่าย</td></tr>
+        <tr><td>เมื่อ topology เปลี่ยน</td><td>ผู้ดูแลต้องแก้เอง</td><td>ปรับตัวเองอัตโนมัติ</td></tr>
+        <tr><td>ขยายขนาด</td><td>เหมาะกับ topology ง่ายๆ</td><td>ใช้ได้ตั้งแต่ง่ายจนซับซ้อน</td></tr>
+        <tr><td>ความปลอดภัย</td><td>ปลอดภัยในตัว</td><td>ต้องตั้งค่าความปลอดภัยเพิ่ม</td></tr>
+        <tr><td>ทรัพยากร</td><td>ไม่ใช้เพิ่ม</td><td>ใช้ CPU, memory, bandwidth</td></tr>
+        <tr><td>คาดเดาเส้นทาง</td><td>ผู้ดูแลกำหนดไว้ชัด</td><td>ขึ้นกับ topology และโปรโตคอล</td></tr>
+      </tbody>
+    </table></div>
+    <p>สไลด์บอกว่า static เหมาะกับเครือข่ายเล็ก ดูแลง่าย, [[stub]], ทำ [[defroute]] และเส้นทางเฉพาะบางวง ส่วน dynamic เหมาะกับเครือข่ายใหญ่ที่เปลี่ยนบ่อย และต้องค้นหาวงที่อยู่ไกลเอง</p>
+    <div id="q-static"></div>
+  </section>
+
+  <section class="idea col" id="s-igp">
+    <h2>ทุกตัวที่ออกสอบเป็น interior<span class="en">IGP vs EGP</span></h2>
+    <p class="key">[[igp]] หาเส้นทางภายใน [[as]] เดียว [[egp]] หาเส้นทางระหว่าง AS static, RIP, EIGRP และ OSPF ที่เรียนมาเป็น interior ทั้งหมด ตัว exterior ในสไลด์มีแค่ [[bgp]]</p>
+    <p>เลือกโปรโตคอลเพื่อดูว่ามันทำงานอยู่ตรงไหนของรูป</p>
+    <div class="fig" id="fig-igp"></div>
+  </section>
+
+  <section class="idea col" id="s-dvls">
+    <h2>Distance vector รู้แค่ทาง Link state เห็นทั้งแผนที่<span class="en">Distance vector vs link state</span></h2>
+    <p class="key">dynamic protocol แบ่งตามวิธีทำงานได้สองแบบ [[dv]] เชื่อสิ่งที่เพื่อนบ้านบอก รู้แค่ระยะกับทิศ ส่วน [[ls]] ให้ทุกตัวมีแผนที่ทั้งเครือข่ายแล้วคำนวณเอง [[rip]] เป็น DV, [[ospf]] เป็น LS, [[eigrp]] อยู่ตรงกลางแต่ใกล้ DV</p>
+    <p>เลือกโหมด แล้วแตะ router อีกตัวเพื่อเปลี่ยนมุมมอง ดูว่าแต่ละตัวรู้อะไรบ้าง และส่งอะไรให้กัน</p>
+    <div class="fig" id="fig-dvls"></div>
+    <p>EIGRP ส่งข้อมูลให้เพื่อนบ้านแบบ distance vector จึงยังไม่เห็นแผนที่ทั้งหมด แต่เก็บเส้นทางที่เพื่อนบ้านทุกตัวบอกไว้ใน topology table เพื่อมีทางสำรองพร้อมใช้ ส่วนนี้คล้าย link state เล็กน้อย</p>
+    <p>สรุปสี่ตัวที่ออกสอบ:</p>
+    <div class="tw"><table class="cmp fam">
+      <thead><tr><th></th><th>ประเภท</th><th>Metric</th><th>AD</th></tr></thead>
+      <tbody>
+        <tr><td>Static</td><td>กำหนดเอง ไม่ใช่ dynamic</td><td>ไม่มี [1/0]</td><td>1</td></tr>
+        <tr><td>RIP</td><td>IGP, distance vector</td><td>hop count</td><td>120</td></tr>
+        <tr><td>EIGRP</td><td>IGP, DV ขั้นสูง (hybrid)</td><td>bandwidth + delay</td><td>90</td></tr>
+        <tr><td>OSPF</td><td>IGP, link state</td><td>cost จาก bandwidth</td><td>110</td></tr>
+      </tbody>
+    </table></div>
+    <div id="q-dvls"></div>
+  </section>
+
+  <section class="idea col" id="s-metric">
+    <h2>แต่ละโปรโตคอลวัดทางไม่เหมือนกัน<span class="en">Metric per protocol</span></h2>
+    <p class="key">[[metric]] คือตัวเลขที่โปรโตคอลใช้เทียบเส้นทาง ยิ่งน้อยยิ่งดี RIP นับ [[hopcount]], OSPF ใช้ [[ospfcost]] ที่คิดจาก bandwidth, EIGRP ใช้ [[eigrpmetric]] จาก bandwidth กับ delay ทางเดียวกันจึงอาจถูกเลือกต่างกัน</p>
+    <p>Router A ต้องส่งไปวง X ที่อยู่หลัง B มีสองทาง คือตรงไป B ผ่านสาย serial 64 kb/s หรืออ้อมผ่าน C ด้วยลิงก์ 1 Gb/s สลับโปรโตคอลแล้วดูว่าทางที่เลือกเปลี่ยนไหม</p>
+    <div class="fig" id="fig-metric"></div>
+    <div id="eq-metric"></div>
+    <div id="q-metric"></div>
+  </section>
+
+  <section class="idea col" id="s-ad">
+    <h2>หลายแหล่งบอกทางไปวงเดียวกัน เชื่อใคร<span class="en">Administrative distance</span></h2>
+    <p class="key">ถ้า router ได้เส้นทางไปวงเดียวกัน (prefix เดียวกัน) จากหลายแหล่ง มันเทียบ [[ad]] ใครน้อยกว่าชนะ แล้วใส่ลงตารางแค่เส้นนั้น [[metric]] ใช้เทียบเฉพาะเส้นทางจากโปรโตคอลเดียวกัน เพราะแต่ละโปรโตคอลใช้หน่วยต่างกัน</p>
+    <p>เปิดปิดแหล่งเส้นทางบน Router A จากรูปที่แล้ว ทุกแหล่งบอกทางไปวง X 192.168.9.0/24 เหมือนกัน ดูว่าบรรทัดไหนได้เข้าตาราง</p>
+    <div class="fig" id="fig-ad"></div>
+    <p>static ชนะทุกโปรโตคอลเพราะผู้ดูแลกำหนดไว้ตายตัว AD เป็น 1 ระหว่างโปรโตคอลด้วยกัน EIGRP (90) ชนะ OSPF (110) และ RIP (120) ลำดับการตัดสินทั้งหมดของ router เป็นแบบนี้:</p>
+    <div id="eq-order"></div>
+    <p>prefix ต้องมาก่อนเสมอ เพราะ AD ใช้เทียบเฉพาะเส้นทางที่ไปวงเดียวกันขนาดเดียวกันเท่านั้น ถ้าวงต่างขนาดกัน router ไม่ได้มองว่าเป็นเส้นทางแข่งกัน แต่ใช้ longest prefix match เลือกตอนส่งแพ็กเก็ต</p>
+    <div id="q-ad"></div>
+  </section>
+
+  <section class="idea col" id="s-drill">
+    <h2>ลองตอบแบบข้อสอบ<span class="en">Which route is used, and why</span></h2>
+    <p>โจทย์สุ่มใหม่ทุกครั้ง อ่านเส้นทางที่ router รู้ แล้วเลือกว่าแพ็กเก็ตจะไปทางไหน ตอบแล้วกดดูวิธีทำ จะเห็นประโยคที่ควรเขียนในกระดาษคำตอบทีละบรรทัด</p>
+  </section>
+  <div class="drill" id="drill"></div>
+
+  <a class="next" href="rip.html"><div class="s">บทถัดไป</div><div class="t">RIP <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div></a>
+</main>
+<script src="assets/core.js"></script>
+<script src="assets/routing-kit.js"></script>
+<script src="assets/routing-concepts.js"></script>
+<script src="routing.js"></script>
+</body>
+</html>

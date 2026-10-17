@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RIP | Hop</title>
+<meta name="theme-color" content="#0F0F12">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/core.css">
+<link rel="stylesheet" href="assets/routing.css">
+</head>
+<body>
+<main>
+  <div class="col head">
+    <h1>RIP</h1>
+    <p class="lede">อาจารย์จะถาม [[rip]] แบบละเอียด แต่ถามให้อธิบายการทำงาน ไม่ได้ให้ท่องรายการ: ดูรูปแล้วนับ [[hopcount|hop]], บอกว่าทางไหนดีที่สุด, เติม routing table ของ router ตัวหนึ่ง (วง, ขาออก, hop) และอธิบายว่าตารางค่อยๆ เต็มด้วย [[ripupdate|update ทุก 30 วินาที]] จนถึง [[convergence]] ได้ยังไง ไม่มีการคำนวณ IP</p>
+  </div>
+
+  <div class="fig map" id="map"></div>
+
+  <section class="idea col" id="s-hop">
+    <h2>Metric ของ RIP คือการนับ router<span class="en">Hop count, maximum 15</span></h2>
+    <p class="key">[[hopcount]] ของวงหนึ่งคือจำนวน router ที่แพ็กเก็ตต้องผ่านต่อจากเราจนถึง router ที่ต่อกับวงนั้น วงที่ต่อกับเราตรงๆ เป็น 0 hop วงที่ต่อกับเพื่อนบ้านเป็น 1 hop RIP นับได้สูงสุด 15 ส่วน [[unreach|16 แปลว่าไปไม่ถึง]]</p>
+    <p>ในรูปบนสุด แตะชื่อวงแต่ละวง แล้วดูตัวเลขที่ขึ้นข้าง router ทุกตัว เช่น 10.4.0.0 ต่ออยู่กับ R3 จึงเป็น 0 hop สำหรับ R3, R2 ต้องผ่าน R3 อีกหนึ่งตัวจึงเป็น 1 และ R1 ต้องผ่าน R2 กับ R3 จึงเป็น 2</p>
+    <p>RIP ไม่สนใจความเร็วของลิงก์เลย นับแค่จำนวน router เพราะนับง่ายแบบนี้ จึงมีขีดจำกัด ลองยืดสายให้ยาวขึ้นแล้วดูว่า router ตัวสุดท้ายเห็นวงทางซ้ายสุดไกลกี่ hop</p>
+    <div class="fig" id="fig-hop"></div>
+    <div id="q-hop"></div>
+  </section>
+
+  <section class="idea col" id="s-build">
+    <h2>ตารางค่อยๆ เต็มทีละรอบ<span class="en">Cold start, exchange, convergence</span></h2>
+    <p class="key">ตอน [[coldstart]] router รู้แค่วงที่ต่อตรง (0 hop) จากนั้นทุกรอบ update แต่ละตัวส่งตารางทั้งตารางให้เพื่อนบ้าน ผู้รับ [[plusone|บวก 1 แล้วเก็บตัวที่น้อยกว่า]] พร้อมจดขาที่ข้อมูลเข้ามา ทำซ้ำจนไม่มีอะไรใหม่ คือ [[convergence]]</p>
+    <div id="eq-plus"></div>
+    <p>ลากแถบเวลาดูทีละจังหวะ เป็นตัวอย่างเดียวกับสไลด์ ช่องข้อความเหนือตารางแสดงว่า router ได้อะไรมาจากเพื่อนบ้าน บวก 1 แล้วได้เท่าไร และเก็บหรือไม่เก็บ</p>
+    <div class="fig" id="fig-build"></div>
+    <p>คอลัมน์ Interface ในตารางของสไลด์คือขาที่ update เข้ามา ซึ่งก็คือขาที่ต้องส่งแพ็กเก็ตออกไปหาวงนั้น บน router จริง <code>show ip route</code> จะแสดงบรรทัดเดียวกันนี้เป็น <code>R 10.4.0.0/16 [120/2] via (IP ของ R2), Serial0/0/0</code> คือ [[ad|AD 120]] และ hop 2</p>
+    <p>ข้อความที่ส่งไปมาใช้กฎ [[splith]] ด้วย คือไม่บอกเส้นทางย้อนกลับไปทางที่ได้มา สังเกตในรอบที่ 2 R2 ไม่บอก 10.1.0.0 กลับไปให้ R1 เพราะได้มาจาก R1 เอง</p>
+    <div id="q-build"></div>
+  </section>
+
+  <section class="idea col" id="s-update">
+    <h2>ส่งทั้งตารางทุก 30 วินาที<span class="en">Periodic full-table updates and timers</span></h2>
+    <p class="key">RIP ไม่รอให้มีอะไรเปลี่ยน ทุก 30 วินาทีมันส่ง [[ripupdate|ตารางทั้งตาราง]] ให้เพื่อนบ้านซ้ำไปเรื่อยๆ การได้ยินซ้ำทุก 30 วินาทีคือวิธีที่ router รู้ว่าเส้นทางยังใช้ได้</p>
+    <p>รูปนี้ดูจากมุมของ R2 ช่องสุดท้ายของตารางคือเวลาที่ผ่านไปตั้งแต่ได้ยินเส้นทางนั้นครั้งล่าสุด ลองสลับเป็นแบบที่ R3 หยุดส่งไปเฉยๆ แล้วลากเวลาไปจนสุด</p>
+    <div class="fig" id="fig-update"></div>
+    <p>ตัวเลข 180 และ 240 วินาทีไม่มีในสไลด์ เป็น [[timers]] มาตรฐานของ Cisco ใส่ไว้ให้เห็นว่าถ้าเส้นทางหายไปเงียบๆ RIP ต้องรอหลายนาทีกว่าจะรู้ตัว สิ่งที่ต้องจำสำหรับข้อสอบคือ update ทุก 30 วินาที ส่งทั้งตาราง ไปหาเพื่อนบ้านที่ต่อตรง</p>
+  </section>
+
+  <section class="idea col" id="s-conv">
+    <h2>ทำไม RIP converge ช้า<span class="en">Convergence time</span></h2>
+    <p class="key">ข่าวเรื่องวงใหม่เดินทางได้แค่หนึ่ง router ต่อหนึ่งรอบ update สายที่มี n router จึงต้องใช้ประมาณ n − 1 รอบ หรือ (n − 1) × 30 วินาทีกว่าทุกตัวจะรู้ครบ ยิ่งเครือข่ายใหญ่ยิ่งช้า</p>
+    <div id="eq-conv"></div>
+    <p>เลือกความยาวของสาย แล้วกดเล่นเพื่อดูข่าวเรื่องวง 10.1.0.0 ทางซ้ายสุดค่อยๆ ไหลไปทางขวา</p>
+    <div class="fig" id="fig-conv"></div>
+    <p>สรุปเหตุผลที่ RIP ช้าและไม่เหมาะกับเครือข่ายใหญ่: ข้อมูลเดินทีละ hop ต่อรอบ, รอบละ 30 วินาที, ส่งทั้งตารางทุกรอบแม้ไม่มีอะไรเปลี่ยนจึงเปลือง bandwidth, ไปได้ไกลสุดแค่ 15 hop และเลือกทางจากจำนวน router โดยไม่ดูความเร็วลิงก์ เทียบกับ OSPF ที่ส่ง update ทันทีเฉพาะตอนมีการเปลี่ยนแปลงจึงเร็วกว่ามาก</p>
+    <p>ในสไลด์มีวิธีกันลูปของ RIP แค่ [[splith]] ตำราทั่วไปยังมีวิธีเสริมอีกหลายอย่าง เช่น route poisoning (ประกาศวงที่ล่มเป็น 16 ทันที), poison reverse, holddown timer และ triggered update (ส่งทันทีเมื่อมีการเปลี่ยนแปลง) ส่วนนี้ไม่มีในสไลด์ รู้ชื่อไว้ก็พอ</p>
+    <div id="q-conv"></div>
+  </section>
+
+  <section class="idea col" id="s-ver">
+    <h2>RIPv1 กับ RIPv2<span class="en">Classful vs classless RIP</span></h2>
+    <p class="key">ทั้งสองรุ่นนับ hop เหมือนกัน (สูงสุด 15) และส่งทุก 30 วินาทีเหมือนกัน ต่างกันที่ [[ripv1]] ส่งแบบ broadcast และไม่บอก subnet mask ส่วน [[ripv2]] ส่งแบบ multicast และบอก mask มาด้วย จึงใช้ VLSM ได้</p>
+    <div class="fig" id="fig-ver"></div>
+    <div class="tw"><table class="cmp" id="t-ver">
+      <thead><tr><th>คุณสมบัติ (สไลด์)</th><th>RIPv1</th><th>RIPv2</th></tr></thead>
+      <tbody>
+        <tr><td>Metric</td><td colspan="2">hop count สูงสุด 15 ทั้งสองรุ่น</td></tr>
+        <tr><td>ส่ง update ไปที่</td><td class="mono">255.255.255.255</td><td class="mono">224.0.0.9</td></tr>
+        <tr><td>รองรับ VLSM</td><td data-n></td><td data-y></td></tr>
+        <tr><td>รองรับ CIDR</td><td data-n></td><td data-y></td></tr>
+        <tr><td>รองรับ summarization</td><td data-n></td><td data-y></td></tr>
+        <tr><td>รองรับ authentication</td><td data-n></td><td data-y></td></tr>
+      </tbody>
+    </table></div>
+    <p>สไลด์สรุปเพิ่ม: RIP ตั้งค่าง่าย, AD = 120, RIPv2 เป็น classless routing protocol และ [[ripng]] คือ RIP สำหรับ IPv6 สไลด์เขียนว่า update ส่งแบบ broadcast 255.255.255.255 ทุก 30 วินาที ซึ่งตรงกับ RIPv1 รุ่นเดียว</p>
+    <div id="q-ver"></div>
+  </section>
+
+  <section class="idea col" id="s-config">
+    <h2>คำสั่งตั้งค่า RIP<span class="en">router rip, version 2, network</span></h2>
+    <p class="key">เปิด RIP ด้วย <code>router rip</code> เลือกรุ่นด้วย <code>version 2</code> แล้วบอกด้วย [[ripnet|network]] ว่าขาไหนรัน RIP router จะหาเพื่อนบ้านและแลกตารางกันเอง ไม่ต้องพิมพ์เส้นทางทีละวงแบบ static</p>
+    <p>ตัวอย่างนี้คือ Router_A ในแล็บ 6 แตะแต่ละบรรทัดเพื่อดูว่าทำอะไร</p>
+    <div class="fig" id="fig-config"></div>
+    <p>สไลด์เขียน <code>Router(config)#version 2</code> แต่ที่ถูกต้องพิมพ์ในโหมด <code>Router(config-router)#</code> หลัง <code>router rip</code> ตามที่แล็บเขียนว่า ver 2 ฝั่ง IPv6 ในแล็บใช้ <code>ipv6 unicast-routing</code> แล้วพิมพ์ <code>ipv6 rip 10 enable</code> ที่ทุก interface</p>
+  </section>
+
+  <section class="idea col" id="s-abc">
+    <h2>โจทย์รูป Router A, B, C ในสไลด์<span class="en">Which direction does RIP choose?</span></h2>
+    <p class="key">RIP เลือกทางที่ผ่าน router น้อยที่สุดเสมอ ถึงทางนั้นจะใช้สายที่ช้ากว่า ความเร็วที่เขียนบนลิงก์ในรูปมีไว้หลอกให้คิดผิด</p>
+    <p>รูปจากสไลด์: Router A ต่อ B ด้วยสาย 56 Kbps, A ต่อ C และ C ต่อ B ด้วยสาย 1.5 (สไลด์เขียน Kbps ซึ่งน่าจะหมายถึง 1.5 Mbps) เครือข่าย B ต่ออยู่ที่ Router B เลือกว่าส่งจาก router ไหน</p>
+    <div class="fig" id="fig-abc"></div>
+    <div id="q-abc"></div>
+  </section>
+
+  <section class="idea col" id="s-drill">
+    <h2>ลองเติมตาราง RIP เอง<span class="en">Count hops, fill the table</span></h2>
+    <p>topology สุ่มใหม่ทุกครั้ง ทุก router รัน RIP และ converge แล้ว เติม hop และขาออกของทุกวงในตารางของ router ที่โจทย์ถาม กดตรวจ แล้วกดดูวิธีทำเพื่อดูประโยคที่ควรเขียน</p>
+  </section>
+  <div class="drill" id="drill"></div>
+
+  <a class="next" href="eigrp.html"><div class="s">บทถัดไป</div><div class="t">EIGRP <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div></a>
+</main>
+<script src="assets/core.js"></script>
+<script src="assets/routing-kit.js"></script>
+<script src="assets/routing-concepts.js"></script>
+<script src="assets/rip-concepts.js"></script>
+<script src="rip.js"></script>
+</body>
+</html>
