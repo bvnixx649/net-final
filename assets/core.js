@@ -41,6 +41,7 @@ const Hop = (() => {
     { n: 6, href: 'threats.html', t: 'ภัยคุกคามและ CIA', s: 'Attack approach แต่ละแบบกระทบ CIA ยังไง' },
     { n: 7, href: 'acl.html', t: 'Firewall & ACL', s: 'ประเภท firewall, เขียนคำสั่ง ACL' },
     { n: 8, href: 'protocols.html', t: 'Security protocols & NAT', s: 'OSI กับ HTTPS, SSL/TLS, VPN, IPSec, NAT' },
+    { n: 9, href: 'exam.html', t: 'ข้อสอบจำลอง', s: 'สุ่มโจทย์รวมทุกบท แบบที่อาจารย์บอกว่าจะออก' },
   ];
 
   const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="7" cy="23" r="4.2" fill="var(--accent)"/><circle cx="25" cy="9" r="4.2" fill="none" stroke="var(--ink)" stroke-width="2.4"/><path d="M10 20.5 C 14 12, 17 20, 21.5 11.5" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="0.1 5.2"/></svg>`;

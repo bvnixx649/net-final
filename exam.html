@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ข้อสอบจำลอง | Hop</title>
+<meta name="theme-color" content="#0F0F12">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/core.css">
+<link rel="stylesheet" href="assets/ip.css">
+<link rel="stylesheet" href="assets/exam.css">
+</head>
+<body>
+<main>
+  <div class="col head">
+    <h1>ข้อสอบจำลอง</h1>
+    <p class="lede">10 ข้อ ครบทุกเรื่องที่อาจารย์บอกว่าจะออก ตัวเลขสุ่มใหม่ทุกครั้ง ทำในกระดาษก่อนแล้วค่อยกรอก ข้อไหนเป็นข้อเขียน ให้เขียนคำตอบเองก่อนแล้วเปิดเฉลยเทียบ</p>
+    <div class="exam-top">
+      <button class="btn primary" id="regen"></button>
+      <span class="exam-score" id="score"></span>
+    </div>
+  </div>
+  <nav class="qnav" id="qnav" aria-label="ข้อ"></nav>
+  <div id="paper"></div>
+  <a class="next" href="index.html"><div class="s">จบชุดนี้แล้ว</div><div class="t">กลับไปหน้าแผนที่ข้อสอบ <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div></a>
+</main>
+<script src="assets/core.js"></script>
+<script src="assets/ipcalc.js"></script>
+<script src="assets/ip-concepts.js"></script>
+<script src="exam.js"></script>
+</body>
+</html>
